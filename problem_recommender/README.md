@@ -167,3 +167,7 @@ and override any defaults in `rules_engine.py`. Example overrides:
   "language_match_bonus": 0.12
 }
 ```
+
+## License
+
+AGPL-3.0. See `LICENSE`.
