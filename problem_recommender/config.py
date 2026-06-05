@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Paths
 BASE_DIR = Path(__file__).parent
-JAVA_PROBLEMS_DIR = BASE_DIR.parent / "Java"
+JAVA_PROBLEMS_DIR = BASE_DIR / "java"
 DATA_DIR = BASE_DIR / "data"
 PROBLEMS_DB_FILE = DATA_DIR / "problems_db.json"
 PROGRESS_FILE = DATA_DIR / "progress.json"
@@ -25,3 +25,4 @@ MAX_RECOMMENDATIONS = 5
 
 # Ensure data directory exists
 DATA_DIR.mkdir(exist_ok=True)
+JAVA_PROBLEMS_DIR.mkdir(exist_ok=True)

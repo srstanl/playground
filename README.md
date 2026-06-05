@@ -1,2 +1,6 @@
 # playground
-My personal FAFO space
+
+My personal FAFO space.
+
+Current primary project:
+- `problem_recommender/`

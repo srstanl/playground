@@ -23,8 +23,8 @@ Generated files follow:
 - Example: `queues-senior-swe-medium-test.java`
 
 ## Output Targets
-- Code files live under `codex_engine/`.
-- JUnit tests live alongside code files in `codex_engine/`.
+- Curated Java problem files live under `java/`.
+- JUnit tests live alongside their matching Java files in `java/`.
 
 ## Content Guidelines
 - Java skeletons include:
@@ -52,5 +52,5 @@ Generated files follow:
 "queues senior swe java medium healthcare"
 
 ## Example Output
-- `codex_engine/queues-senior-swe-medium-healthcare.java`
-- `codex_engine/queues-senior-swe-medium-healthcare-test.java`
+- `java/queues-senior-swe-medium-healthcare.java`
+- `java/queues-senior-swe-medium-healthcare-test.java`

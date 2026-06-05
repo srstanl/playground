@@ -185,6 +185,7 @@ problem_recommender/
 ├── FEEDBACK_SYSTEM.md               ← Learning system docs
 ├── README.md                        ← Updated with test feature
 │
+├── java/                            ← Curated Java problem corpus
 ├── generated_problems/              ← Generated problem files
 ├── data/                            ← Your progress data
 └── venv/                            ← Python environment
