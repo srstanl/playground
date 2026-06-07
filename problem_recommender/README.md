@@ -140,9 +140,10 @@ python main.py --list-generated
 - `feedback_engine.py` - Collects feedback and builds skill profiles
 - `ai_agent.py` - AI-powered recommendation engine
 - `rules_engine.py` - Rule-based recommendations with feedback integration
-- `problem_analyzer.py` - Scans and analyzes Java problem files
+- `problem_analyzer.py` - Scans and analyzes the curated Java problem corpus
 - `progress_tracker.py` - Tracks problem attempts and completions
 - `config.py` - Configuration settings
+- `java/` - Curated Java interview problems used by the recommender
 - `data/` - Stores all user data (local only, no cloud sync)
 - `generated_problems/` - AI-generated practice problems organized by language
 - `progress_tracker.py` - Tracks your attempts and progress
@@ -166,3 +167,7 @@ and override any defaults in `rules_engine.py`. Example overrides:
   "language_match_bonus": 0.12
 }
 ```
+
+## License
+
+AGPL-3.0. See `LICENSE`.
