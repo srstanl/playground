@@ -32,6 +32,10 @@ Generate new coding problems on demand:
 
 See [PROBLEM_GENERATION.md](PROBLEM_GENERATION.md) for detailed documentation.
 
+Architecture and surface-split plan:
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [SERVICE_SPLIT_PLAN.md](SERVICE_SPLIT_PLAN.md)
+
 ### Role-Aware Problem Generation
 
 Generate problems tailored to your career level:
