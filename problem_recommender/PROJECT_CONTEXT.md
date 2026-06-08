@@ -6,6 +6,7 @@ Generate interview-style programming problems (business-oriented by default) wit
 ## Default Assumptions
 - Business-oriented framing unless a specific domain context is provided.
 - Roles and levels influence framing, but the algorithmic core stays interview-appropriate.
+- Web-facing projects should default to the `.NET` backend and `Angular` frontend stack unless there is a documented reason to diverge.
 
 ## Naming Convention
 Generated files follow:

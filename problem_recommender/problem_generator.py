@@ -10,13 +10,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from openai import OpenAI
-from config import GITHUB_TOKEN, MODEL_ENDPOINT, MODEL_NAME, JAVA_PROBLEMS_DIR
+from config import (
+    GENERATED_PROBLEMS_DIR,
+    GITHUB_TOKEN,
+    MODEL_ENDPOINT,
+    MODEL_NAME,
+)
 
 
 class ProblemGenerator:
     def __init__(self):
-        self.generated_problems_dir = JAVA_PROBLEMS_DIR.parent / "generated_problems"
-        self.generated_problems_dir.mkdir(exist_ok=True)
+        self.generated_problems_dir = GENERATED_PROBLEMS_DIR
         
         # Initialize AI client - try OpenAI first, then GitHub Models
         import os

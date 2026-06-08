@@ -4,6 +4,7 @@ from pathlib import Path
 # Paths
 BASE_DIR = Path(__file__).parent
 JAVA_PROBLEMS_DIR = BASE_DIR / "java"
+GENERATED_PROBLEMS_DIR = BASE_DIR / "generated_problems"
 DATA_DIR = BASE_DIR / "data"
 PROBLEMS_DB_FILE = DATA_DIR / "problems_db.json"
 PROGRESS_FILE = DATA_DIR / "progress.json"
@@ -23,6 +24,7 @@ MODEL_NAME = "gpt-4o-mini"
 DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
 MAX_RECOMMENDATIONS = 5
 
-# Ensure data directory exists
-DATA_DIR.mkdir(exist_ok=True)
+# Ensure local writable directories exist
 JAVA_PROBLEMS_DIR.mkdir(exist_ok=True)
+GENERATED_PROBLEMS_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(exist_ok=True)
