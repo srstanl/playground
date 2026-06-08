@@ -39,3 +39,9 @@ Sometimes I discover a useful pattern. Sometimes I discover why the abstraction 
 Either way, I learn something.
 
 Happy exploring.
+
+## Repository Governance
+
+- `main` branch protection for this repository is managed from the shared ruleset baseline stored in `portfolio/scripts/github/rulesets/`.
+- This is intentional: branch policy is treated as shared platform governance rather than duplicated per repository.
+
