@@ -27,8 +27,8 @@ Generated files follow:
 - Example: `queues-senior-swe-medium-test.java`
 
 ## Output Targets
-- Curated Java problem files live under `java/`.
-- JUnit tests live alongside their matching Java files in `java/`.
+- Curated Java problem files live under `cli/java/`.
+- JUnit tests live alongside their matching Java files in `cli/java/`.
 
 ## Content Guidelines
 - Java skeletons include:
@@ -56,5 +56,5 @@ Generated files follow:
 "queues senior swe java medium healthcare"
 
 ## Example Output
-- `java/queues-senior-swe-medium-healthcare.java`
-- `java/queues-senior-swe-medium-healthcare-test.java`
+- `cli/java/queues-senior-swe-medium-healthcare.java`
+- `cli/java/queues-senior-swe-medium-healthcare-test.java`

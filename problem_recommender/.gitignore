@@ -41,3 +41,6 @@ pnpm-debug.log*
 *.pyc
 # Misc
 *.log
+
+# Generated question artifacts
+generated_questions/
