@@ -30,11 +30,14 @@ Generate new coding problems on demand:
 - **File Persistence**: Saves to organized directories with metadata
 - **Feedback Integration**: Generated problems integrate with the learning system
 
-See [PROBLEM_GENERATION.md](PROBLEM_GENERATION.md) for detailed documentation.
+See [cli/docs/PROBLEM_GENERATION.md](cli/docs/PROBLEM_GENERATION.md) for detailed documentation.
 
 Architecture and surface-split plan:
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [SERVICE_SPLIT_PLAN.md](SERVICE_SPLIT_PLAN.md)
+- [cli/docs/QUICK_START.md](cli/docs/QUICK_START.md)
+- [cli/docs/PROBLEM_GENERATION.md](cli/docs/PROBLEM_GENERATION.md)
+- [cli/docs/TEST_EXECUTION.md](cli/docs/TEST_EXECUTION.md)
 
 ### Role-Aware Problem Generation
 
@@ -52,9 +55,9 @@ Problems auto-calibrate:
 - **Senior/Staff**: System design, edge cases, scalability
 - **Principal**: Advanced architecture, novel approaches
 
-**Quick Start:** See [ROLE_QUICK_REFERENCE.md](ROLE_QUICK_REFERENCE.md) for quick examples and commands.
+**Quick Start:** See [cli/docs/ROLE_QUICK_REFERENCE.md](cli/docs/ROLE_QUICK_REFERENCE.md) for quick examples and commands.
 
-**Full Guide:** See [ROLE_AWARE_GENERATION.md](ROLE_AWARE_GENERATION.md) for complete documentation including all role keywords, workflows, and tips.
+**Full Guide:** See [cli/docs/ROLE_AWARE_GENERATION.md](cli/docs/ROLE_AWARE_GENERATION.md) for complete documentation including all role keywords, workflows, and tips.
 
 ## Features: Automated Testing
 
@@ -67,7 +70,7 @@ Automatically test your solutions:
 - **Integration**: Test results feed into your learning insights
 - **Error Details**: Shows exactly what your code produced vs expected
 
-See [TEST_EXECUTION.md](TEST_EXECUTION.md) for detailed documentation.
+See [cli/docs/TEST_EXECUTION.md](cli/docs/TEST_EXECUTION.md) for detailed documentation.
 
 
 ## Features: Feedback & Self-Improvement
@@ -80,7 +83,7 @@ The system continuously learns from your interactions:
 - **Adapt Recommendations**: Gets smarter every time you practice
 - **Suggest Next Steps**: Recommends when to increase difficulty or focus on weak areas
 
-See [FEEDBACK_SYSTEM.md](FEEDBACK_SYSTEM.md) for detailed documentation.
+See [cli/docs/FEEDBACK_SYSTEM.md](cli/docs/FEEDBACK_SYSTEM.md) for detailed documentation.
 
 
 ## Setup
@@ -97,14 +100,14 @@ See [FEEDBACK_SYSTEM.md](FEEDBACK_SYSTEM.md) for detailed documentation.
 
 4. Run the recommender:
    ```bash
-   python main.py
+   python cli/main.py
    ```
 
 ## Usage
 
 ### Interactive Mode
 ```bash
-python main.py
+python cli/main.py
 ```
 
 Then ask questions like:
@@ -128,31 +131,33 @@ Then ask questions like:
 ### Command Line Mode
 ```bash
 # Get recommendations
-python main.py --query "problems about linked lists"
+python cli/main.py --query "problems about linked lists"
 
 # Generate a new problem
-python main.py --generate "merge sort algorithm in Python"
+python cli/main.py --generate "merge sort algorithm in Python"
 
 # List generated problems
-python main.py --list-generated
+python cli/main.py --list-generated
 ```
 
 ## Project Structure
 
-- `main.py` - Entry point and CLI interface
-- `problem_generator.py` - AI-powered problem generation for multiple languages
-- `feedback_engine.py` - Collects feedback and builds skill profiles
-- `ai_agent.py` - AI-powered recommendation engine
-- `rules_engine.py` - Rule-based recommendations with feedback integration
-- `problem_analyzer.py` - Scans and analyzes the curated Java problem corpus
-- `progress_tracker.py` - Tracks problem attempts and completions
-- `config.py` - Configuration settings
-- `java/` - Curated Java interview problems used by the recommender
-- `data/` - Stores all user data (local only, no cloud sync)
-- `generated_problems/` - AI-generated practice problems organized by language
-- `progress_tracker.py` - Tracks your attempts and progress
-- `config.py` - Configuration settings
-- `data/` - Stores problem metadata and progress data
+- `cli/main.py` - Entry point and CLI interface
+- `cli/docs/` - CLI-focused guides and runbooks
+- `api/` - FastAPI surface for health and recommendation endpoints
+- `services/` - shared orchestration used by both CLI and API
+- `shared/` - shared runtime modules used by CLI, API, and services
+- `tests/` - integration and future parity tests
+- `shared/problem_generator.py` - transitional generation adapter and persistence logic
+- `shared/feedback_engine.py` - shared feedback and skill-profile persistence
+- `shared/ai_agent.py` - transitional AI recommendation adapter
+- `shared/rules_engine.py` - shared rule-based recommendation scoring
+- `shared/problem_analyzer.py` - transitional curated corpus adapter
+- `shared/progress_tracker.py` - shared progress persistence and stats
+- `shared/config.py` - shared runtime configuration
+- `cli/java/` - curated Java interview problems used by the recommender
+- `data/` - local user and metadata storage
+- `generated_questions/{language}/` - ignored generated practice problems organized by language
 
 ## Rules Profile (Optional)
 

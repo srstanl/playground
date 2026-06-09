@@ -6,7 +6,8 @@
 
 ```
 Main Application
-├── main.py                    → CLI interface, feedback collection, insights
+├── cli/main.py                → CLI interface, feedback collection, insights
+├── shared/                    → Shared runtime modules used by CLI/API/services
 ├── ai_agent.py               → AI-powered recommendations (GitHub Models/OpenAI)
 ├── rules_engine.py           → Rule-based scoring with feedback integration
 ├── problem_analyzer.py       → Scans Java files, extracts metadata
@@ -21,28 +22,28 @@ Main Application
 ```
 Getting Started
 ├── README.md                 → Project overview and setup (UPDATED)
-├── QUICK_START.md            → 5-minute onboarding guide
-├── START_HERE.md             → Recommended reading order
+├── cli/docs/QUICK_START.md            → 5-minute onboarding guide
+├── cli/docs/START_HERE.md             → Recommended reading order
 └── .env.example              → Environment variable template
 
 Role-Aware Problem Generation (NEW)
-├── ROLE_AWARE_GENERATION.md        → Complete role feature guide (380+ lines)
-├── ROLE_QUICK_REFERENCE.md         → Quick lookup tables and examples
+├── cli/docs/ROLE_AWARE_GENERATION.md        → Complete role feature guide (380+ lines)
+├── cli/docs/ROLE_QUICK_REFERENCE.md         → Quick lookup tables and examples
 └── ROLE_AWARE_FEATURES.md          → Feature overview
 
 Problem Generation
-├── PROBLEM_GENERATION.md           → Complete generation guide
-├── SETUP_GENERATION.md             → Setup for problem generation
+├── cli/docs/PROBLEM_GENERATION.md           → Complete generation guide
+├── cli/docs/SETUP_GENERATION.md             → Setup for problem generation
 └── GENERATION_COMPLETE.md          → Implementation summary
 
 Automated Testing
-├── TEST_EXECUTION.md               → Complete testing guide
-├── TEST_QUICK_START.md             → Quick testing examples
+├── cli/docs/TEST_EXECUTION.md               → Complete testing guide
+├── TEST_cli/docs/QUICK_START.md             → Quick testing examples
 ├── TEST_EXECUTION_COMPLETE.md      → Implementation summary
-└── TESTING_GENERATION.md           → Setup guide
+└── cli/docs/TESTING_GENERATION.md           → Setup guide
 
 Feedback & Self-Improvement
-├── FEEDBACK_SYSTEM.md              → Complete feedback guide
+├── cli/docs/FEEDBACK_SYSTEM.md              → Complete feedback guide
 ├── SELF_IMPROVEMENT_IMPLEMENTATION.md  → Technical implementation
 └── SELF_IMPROVEMENT_COMPLETE.md    → Implementation summary
 
@@ -71,12 +72,12 @@ data/
 | Document | Purpose | Read If... |
 |----------|---------|-----------|
 | **README.md** | Project overview, setup instructions | You're just starting |
-| **QUICK_START.md** | 5-minute onboarding, first steps | You want to run it now |
-| **ROLE_AWARE_GENERATION.md** | Complete role-aware feature guide | You want details on role-based problems |
-| **ROLE_QUICK_REFERENCE.md** | Role keywords, quick lookup tables | You want a quick cheat sheet |
-| **PROBLEM_GENERATION.md** | Problem generation guide | You want to generate problems |
-| **TEST_EXECUTION.md** | Automated testing guide | You want to test solutions |
-| **FEEDBACK_SYSTEM.md** | How feedback works, detailed guide | You want to understand the learning system |
+| **cli/docs/QUICK_START.md** | 5-minute onboarding, first steps | You want to run it now |
+| **cli/docs/ROLE_AWARE_GENERATION.md** | Complete role-aware feature guide | You want details on role-based problems |
+| **cli/docs/ROLE_QUICK_REFERENCE.md** | Role keywords, quick lookup tables | You want a quick cheat sheet |
+| **cli/docs/PROBLEM_GENERATION.md** | Problem generation guide | You want to generate problems |
+| **cli/docs/TEST_EXECUTION.md** | Automated testing guide | You want to test solutions |
+| **cli/docs/FEEDBACK_SYSTEM.md** | How feedback works, detailed guide | You want to understand the learning system |
 | **ARCHITECTURE.md** | System design, data flow, components | You want technical details |
 | **IMPLEMENTATION_SUMMARY.md** | Role-aware feature implementation | You're curious about role feature |
 | **IMPLEMENTATION_CHECKLIST.md** | What was added, feature list | You want a checklist of features |
@@ -87,18 +88,18 @@ data/
 
 ### 🚀 I Want to Start Now
 1. Install: `pip install -r requirements.txt`
-2. Run: `python3 main.py`
-3. Read: [QUICK_START.md](QUICK_START.md)
+2. Run: `python3 cli/main.py`
+3. Read: [cli/docs/QUICK_START.md](cli/docs/QUICK_START.md)
 
 ### 🎯 I Want to Generate Role-Aware Problems
-1. Read: [ROLE_QUICK_REFERENCE.md](ROLE_QUICK_REFERENCE.md) - Quick examples (3 min)
-2. Try: `python3 main.py` → `generate` → `staff swe problem in java`
-3. Details: [ROLE_AWARE_GENERATION.md](ROLE_AWARE_GENERATION.md) - Full guide
+1. Read: [cli/docs/ROLE_QUICK_REFERENCE.md](cli/docs/ROLE_QUICK_REFERENCE.md) - Quick examples (3 min)
+2. Try: `python3 cli/main.py` → `generate` → `staff swe problem in java`
+3. Details: [cli/docs/ROLE_AWARE_GENERATION.md](cli/docs/ROLE_AWARE_GENERATION.md) - Full guide
 
 ### 📖 I Want to Understand the System
 1. Read: [README.md](README.md) - Overview
 2. Read: [ARCHITECTURE.md](ARCHITECTURE.md) - How it works
-3. Read: [FEEDBACK_SYSTEM.md](FEEDBACK_SYSTEM.md) - How learning works
+3. Read: [cli/docs/FEEDBACK_SYSTEM.md](cli/docs/FEEDBACK_SYSTEM.md) - How learning works
 
 ### 🔧 I Want Technical Details
 1. Read: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Role feature
@@ -114,7 +115,7 @@ data/
 
 ### Main Application Loop
 ```python
-# main.py
+# cli/main.py
 while True:
     query = user_input()
     
@@ -329,7 +330,7 @@ Python Code:
 ├── feedback_engine.py          ~400 lines  ✨ NEW
 ├── ai_agent.py                 ~180 lines  (enhanced)
 ├── rules_engine.py             ~220 lines  (enhanced)
-├── main.py                     ~340 lines  (enhanced)
+├── cli/main.py                 ~340 lines  (enhanced)
 ├── problem_analyzer.py         ~140 lines
 ├── progress_tracker.py         ~100 lines
 ├── config.py                   ~30 lines
@@ -337,8 +338,8 @@ Python Code:
 
 Documentation:
 ├── README.md                   ~80 lines   (updated)
-├── FEEDBACK_SYSTEM.md          ~200 lines  ✨ NEW
-├── QUICK_START.md              ~150 lines  ✨ NEW
+├── cli/docs/FEEDBACK_SYSTEM.md          ~200 lines  ✨ NEW
+├── cli/docs/QUICK_START.md              ~150 lines  ✨ NEW
 ├── ARCHITECTURE.md             ~300 lines  ✨ NEW
 ├── SELF_IMPROVEMENT_IMPLEMENTATION.md  ~350 lines  ✨ NEW
 ├── IMPLEMENTATION_CHECKLIST.md ~250 lines  ✨ NEW
@@ -371,16 +372,16 @@ Environment:    python-dotenv (.env support)
 ## Next Steps After Setup
 
 ### Phase 1: Learn the System (Day 1)
-1. Run `python3 main.py`
+1. Run `python3 cli/main.py`
 2. Solve 1-2 problems
 3. Provide feedback
-4. Read [QUICK_START.md](QUICK_START.md)
+4. Read [cli/docs/QUICK_START.md](cli/docs/QUICK_START.md)
 
 ### Phase 2: Build Profile (Days 2-7)
 1. Solve 10-15 problems
 2. Always provide feedback
 3. Run `insights` to monitor
-4. Read [FEEDBACK_SYSTEM.md](FEEDBACK_SYSTEM.md)
+4. Read [cli/docs/FEEDBACK_SYSTEM.md](cli/docs/FEEDBACK_SYSTEM.md)
 
 ### Phase 3: See Improvements (Week 2+)
 1. Recommendations become personalized
@@ -419,7 +420,7 @@ A: All in `data/` folder on your machine. All private!
 
 ### Adding New Features
 1. Add logic to appropriate module
-2. Update `main.py` to expose feature
+2. Update `cli/main.py` to expose feature
 3. Document in relevant guide
 4. Update `IMPLEMENTATION_CHECKLIST.md`
 
@@ -439,8 +440,8 @@ A: All in `data/` folder on your machine. All private!
 
 All questions answered in:
 - [README.md](README.md) - General help
-- [QUICK_START.md](QUICK_START.md) - Getting started
-- [FEEDBACK_SYSTEM.md](FEEDBACK_SYSTEM.md) - How feedback works
+- [cli/docs/QUICK_START.md](cli/docs/QUICK_START.md) - Getting started
+- [cli/docs/FEEDBACK_SYSTEM.md](cli/docs/FEEDBACK_SYSTEM.md) - How feedback works
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical details
 - Source code - Well commented!
 

@@ -14,15 +14,14 @@ The rule is simple:
 ```text
 problem_recommender/
 ├── api/                         # FastAPI app, HTTP routes, request/response models
-├── cli/                         # interactive shell, CLI commands, rich output
+├── cli/                         # interactive shell, CLI commands, rich output, local corpus
 ├── domain/                      # core entities and business rules
 ├── services/                    # orchestration layer used by both CLI and API
 ├── adapters/                    # filesystem, model provider, persistence, test runners
-├── java/                        # curated Java corpus
-├── generated_problems/          # generated artifacts
+├── generated_questions/         # generated artifacts grouped by language
 ├── data/                        # local state and cached metadata
+├── shared/                      # shared runtime modules during transition
 ├── tests/                       # unit, integration, API parity tests
-├── main.py                      # CLI entrypoint wrapper
 └── README.md
 ```
 
@@ -41,6 +40,45 @@ But only the CLI needs things like:
 - interactive prompts
 - rich terminal formatting
 - local file-path shortcuts tuned for humans
+
+## Shared Runtime Classification
+
+The shared runtime now lives under `shared/`, with some modules still transitional and awaiting narrower extraction.
+
+### Keep In `shared/` For Now
+These are shared across `cli/`, `api/`, and `services/`, and do not belong to any single surface.
+
+- `shared/config.py` — repo-level configuration and path resolution
+- `shared/rules_engine.py` — shared recommendation scoring logic
+- `shared/feedback_engine.py` — shared feedback and skill-profile persistence
+- `shared/progress_tracker.py` — shared progress persistence and stats
+
+### Transitional Shared Modules
+These are still shared, but they should eventually move behind narrower package boundaries.
+
+- `shared/problem_analyzer.py` → `adapters/filesystem/problem_repository.py`
+- `shared/problem_generator.py` → split across `services/generation_service.py` and `adapters/models/*` plus `adapters/filesystem/generated_problem_repository.py`
+- `shared/ai_agent.py` → `adapters/models/recommendation_ranker.py`
+- `shared/test_executor.py` → `adapters/testing/*` plus `services/testing_service.py`
+
+### Current Package Ownership Target
+Use this as the next cleanup map.
+
+| Current module | Keep where it is now? | Target package later |
+| --- | --- | --- |
+| `shared/config.py` | Yes | `shared/config.py` or `app/config.py` |
+| `shared/rules_engine.py` | Yes | `domain/recommendation_rules.py` |
+| `shared/feedback_engine.py` | Yes | `adapters/filesystem/feedback_repository.py` + `services/insight_service.py` |
+| `shared/progress_tracker.py` | Yes | `adapters/filesystem/progress_repository.py` + `services/progress_service.py` |
+| `shared/problem_analyzer.py` | Transitional | `adapters/filesystem/problem_repository.py` |
+| `shared/problem_generator.py` | Transitional | `services/generation_service.py` + adapters |
+| `shared/ai_agent.py` | Transitional | `adapters/models/recommendation_ranker.py` |
+| `shared/test_executor.py` | Transitional | `adapters/testing/*` + `services/testing_service.py` |
+
+### Meaning
+If a module is shared by both the API and CLI, it belongs in the shared runtime layer rather than under either surface.
+
+`shared/` is the current transitional home for those modules, and the end-state should continue splitting them into `domain/`, `services/`, and `adapters/` as responsibilities become clearer.
 
 ## Core Layers
 
@@ -306,7 +344,7 @@ Move test execution behind `TestingService` with language-specific runners.
 Add `api/` with FastAPI and wire the first endpoints.
 
 ### Step 5
-Refactor `main.py` into a thin CLI bootstrap that delegates to `cli/app.py` and shared services.
+Refactor `cli/main.py` into a thin CLI bootstrap that delegates to `cli/app.py` and shared services.
 
 ## Minimum First Slice
 The smallest worthwhile implementation is:

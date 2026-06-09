@@ -6,7 +6,10 @@ Generate interview-style programming problems (business-oriented by default) wit
 ## Default Assumptions
 - Business-oriented framing unless a specific domain context is provided.
 - Roles and levels influence framing, but the algorithmic core stays interview-appropriate.
-- Web-facing projects should default to the `.NET` backend and `Angular` frontend stack unless there is a documented reason to diverge.
+- Developer-facing and platform-oriented tools should default to a Python backend and React frontend.
+- Other application experiences should default to a .NET backend and Angular frontend.
+- Exceptions are allowed when a project has a documented reason to diverge.
+- `problem_recommender` is treated as a developer-facing tool, so its API/UI MVP should follow the Python + React default.
 
 ## Naming Convention
 Generated files follow:
@@ -24,8 +27,8 @@ Generated files follow:
 - Example: `queues-senior-swe-medium-test.java`
 
 ## Output Targets
-- Curated Java problem files live under `java/`.
-- JUnit tests live alongside their matching Java files in `java/`.
+- Curated Java problem files live under `cli/java/`.
+- JUnit tests live alongside their matching Java files in `cli/java/`.
 
 ## Content Guidelines
 - Java skeletons include:
@@ -53,5 +56,5 @@ Generated files follow:
 "queues senior swe java medium healthcare"
 
 ## Example Output
-- `java/queues-senior-swe-medium-healthcare.java`
-- `java/queues-senior-swe-medium-healthcare-test.java`
+- `cli/java/queues-senior-swe-medium-healthcare.java`
+- `cli/java/queues-senior-swe-medium-healthcare-test.java`

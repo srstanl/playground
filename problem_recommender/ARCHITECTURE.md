@@ -5,7 +5,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        USER INTERACTION                          │
-│                      (main.py - CLI)                             │
+│                      (cli/main.py - CLI)                             │
 └────────────┬────────────────────────────────────────────────────┘
              │
              ├──────────────────────┬──────────────────────┐
@@ -91,11 +91,18 @@
 ## Files You Need to Know
 
 ### Core System
-- **main.py** - Entry point, user interface, feedback collection
-- **ai_agent.py** - Uses AI (GitHub Models/OpenAI) to understand queries
-- **rules_engine.py** - Role-aware, language-aware, feedback-informed scoring
-- **feedback_engine.py** - Processes feedback, builds skill profiles, generates insights
-- **problem_analyzer.py** - Scans Java files, extracts metadata
+- **cli/main.py** - CLI surface only
+- **api/** - HTTP surface only
+- **services/** - shared orchestration used by both surfaces
+- **shared/** - shared runtime modules used by CLI, API, and services
+- **shared/config.py** - shared runtime configuration and paths
+- **shared/rules_engine.py** - shared recommendation scoring logic
+- **shared/feedback_engine.py** - shared feedback and skill-profile persistence
+- **shared/progress_tracker.py** - shared progress persistence and stats
+- **shared/problem_analyzer.py** - transitional filesystem adapter for curated problem corpus
+- **shared/problem_generator.py** - transitional generation adapter and persistence logic
+- **shared/ai_agent.py** - transitional AI ranking adapter
+- **shared/test_executor.py** - transitional test runner adapter
 
 ### Data Files (auto-created in `data/`)
 - **problems_db.json** - All scanned problems with metadata
@@ -106,9 +113,9 @@
 
 ### Documentation
 - **README.md** - Overview and setup
-- **FEEDBACK_SYSTEM.md** - Detailed guide on feedback system
-- **QUICK_START.md** - 5-minute onboarding
-- **SELF_IMPROVEMENT_IMPLEMENTATION.md** - Technical details
+- **cli/docs/FEEDBACK_SYSTEM.md** - Detailed guide on feedback system
+- **cli/docs/QUICK_START.md** - 5-minute onboarding
+- **cli/docs/archive/SELF_IMPROVEMENT_IMPLEMENTATION.md** - Technical details
 
 ## Key Components Explained
 
