@@ -64,7 +64,11 @@ Projects here are allowed to be rough, incomplete, or short-lived. The point is 
   3. Run quick validation for touched areas when feasible.
   4. Update the active board/task state if progress changed during the session.
   5. Summarize the session changes and current repo state.
-  6. Check the current branch name; if it is `main`, create and switch to a new branch before committing.
-  7. Commit the current work with a clear message.
-  8. Push the current branch to remote.
-  9. Call out any known CI blockers, unresolved risks, or next recommended starting point.
+  6. If the work does not already have a tracking issue, create one before opening or updating the PR.
+  7. Link the PR to the issue explicitly:
+     - use `Closes #...` if the issue should remain open until merge
+     - use `Refs #...` if the issue is being closed immediately as tracking-only documentation
+  8. Check the current branch name; if it is `main`, create and switch to a new branch before committing.
+  9. Commit the current work with a clear message.
+  10. Push the current branch to remote.
+  11. Call out any known CI blockers, unresolved risks, or next recommended starting point.
