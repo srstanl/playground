@@ -1,0 +1,145 @@
+{
+  "profile_version": "v2",
+  "identity": {
+    "name": "Your Name",
+    "headline": "Senior Platform & Software Engineer",
+    "summary": "Short summary of the engineering problems you solve best."
+  },
+  "value_proposition": {
+    "primary": "State the main outcome you create.",
+    "supporting": [
+      "Supporting value proposition one.",
+      "Supporting value proposition two."
+    ]
+  },
+  "problem_spaces": {
+    "primary": [
+      "Platform Engineering",
+      "Developer Experience"
+    ],
+    "secondary": [
+      "Observability"
+    ],
+    "adjacent": [
+      "Cloud Infrastructure"
+    ],
+    "avoid_primary": [
+      "Feature Factory"
+    ]
+  },
+  "targeting": {
+    "target_roles": [
+      "Platform Engineer"
+    ],
+    "acceptable_roles": [
+      "Senior Software Engineer"
+    ],
+    "role_seniority": [
+      "senior",
+      "staff"
+    ]
+  },
+  "skills": {
+    "languages": [
+      "Python"
+    ],
+    "frameworks": [
+      ".NET"
+    ],
+    "cloud": [
+      "Azure"
+    ],
+    "delivery": [
+      "GitHub Actions",
+      "Terraform"
+    ],
+    "observability": [
+      "OpenTelemetry"
+    ],
+    "security_compliance": [
+      "RBAC"
+    ]
+  },
+  "experience": {
+    "years_total": 10,
+    "leadership_years": 5,
+    "management_years": 0,
+    "highlights": [
+      "Add measurable delivery or platform impact here."
+    ]
+  },
+  "preferences": {
+    "work_mode": [
+      "remote"
+    ],
+    "acceptable_work_mode": [
+      "hybrid_local"
+    ],
+    "locations": {
+      "preferred": [
+        "Remote US"
+      ],
+      "acceptable": [],
+      "avoid": [
+        "onsite-only"
+      ]
+    },
+    "employment_types": [
+      "full_time"
+    ],
+    "compensation": {
+      "currency": "USD",
+      "minimum_base": 0,
+      "target_base": 0,
+      "hourly_target": 0
+    }
+  },
+  "constraints": {
+    "must_have": [
+      "Clear role scope"
+    ],
+    "nice_to_have": [
+      "Internal platform ownership"
+    ],
+    "deal_breakers": [
+      "pure people management"
+    ],
+    "work_authorization": "authorized",
+    "requires_sponsorship": false,
+    "clearance_eligible": false
+  },
+  "evaluation_preferences": {
+    "weights": {
+      "problem_shape": 0.4,
+      "role_scope": 0.2,
+      "tool_adjacency": 0.1,
+      "environment_alignment": 0.1,
+      "compensation": 0.1,
+      "location": 0.05,
+      "risk": 0.05,
+      "identity_drift": 0.05
+    },
+    "prioritize": [
+      "problem_shape"
+    ],
+    "downweight": [
+      "exact_tool_match"
+    ],
+    "notes": "Describe the evaluation philosophy for this profile."
+  },
+  "identity_guardrails": {
+    "never_optimize_for": [
+      "keyword stuffing"
+    ],
+    "always_preserve": [
+      "problem-solving narrative"
+    ]
+  },
+  "artifact_preferences": {
+    "resume_style": "targeted_but_identity_consistent",
+    "cover_letter_style": "concise_problem_space_alignment",
+    "naming_convention": "Your_Name_{company}_{role}",
+    "generate_pdf": true,
+    "validate_formatting": true
+  }
+}
