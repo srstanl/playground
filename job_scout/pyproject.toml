@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-scout"
+version = "0.1.0"
+description = "Local-first job application intelligence assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-only" }
+authors = [
+  { name = "srstanl" }
+]
+dependencies = [
+  "typer>=0.12,<1.0",
+]
+
+[project.scripts]
+job-scout = "job_scout.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["job_scout*"]
