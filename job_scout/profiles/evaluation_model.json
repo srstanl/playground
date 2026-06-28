@@ -1,0 +1,89 @@
+{
+  "model_version": "v1",
+  "skill_keywords": [
+    "python",
+    "c#",
+    ".net",
+    "java",
+    "javascript",
+    "typescript",
+    "react",
+    "node",
+    "sql",
+    "postgres",
+    "mysql",
+    "aws",
+    "azure",
+    "gcp",
+    "docker",
+    "kubernetes",
+    "terraform",
+    "ci/cd",
+    "github actions",
+    "linux",
+    "api",
+    "microservices"
+  ],
+  "domain_keywords": [
+    "platform",
+    "distributed systems",
+    "data",
+    "security",
+    "payments",
+    "healthcare",
+    "fintech",
+    "ai",
+    "machine learning",
+    "devops"
+  ],
+  "authorization_patterns": [
+    "must be authorized to work",
+    "work authorization",
+    "visa sponsorship",
+    "security clearance",
+    "clearance",
+    "uscis",
+    "us citizen"
+  ],
+  "preferred_skill_markers": [
+    "preferred",
+    "nice to have",
+    "bonus",
+    "plus"
+  ],
+  "work_mode_terms": {
+    "remote": ["remote"],
+    "hybrid": ["hybrid"],
+    "onsite": ["on-site", "onsite", "on site"]
+  },
+  "dimensions": {
+    "problem_shape_alignment": 0.35,
+    "role_scope_alignment": 0.2,
+    "tool_adjacency": 0.1,
+    "environment_alignment": 0.1,
+    "compensation_alignment": 0.1,
+    "location_alignment": 0.05,
+    "risk_alignment": 0.05,
+    "identity_drift": 0.05
+  },
+  "thresholds": {
+    "apply": 75,
+    "consider": 55,
+    "needs_review": 40,
+    "minimum_confidence": 45
+  },
+  "risk_rules": [
+    {
+      "label": "clearance_required",
+      "patterns": ["security clearance", "clearance"]
+    },
+    {
+      "label": "work_authorization_constraint",
+      "patterns": ["must be authorized to work", "visa sponsorship"]
+    },
+    {
+      "label": "travel_requirement",
+      "patterns": ["travel", "25%", "50%", "75%"]
+    }
+  ]
+}

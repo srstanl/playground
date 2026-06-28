@@ -9,6 +9,10 @@ Build a local-first job application intelligence assistant that helps ingest job
 - Human review is required before any recommendation becomes an action.
 - Initial delivery prioritizes ingestion and evaluation before deeper tracking and artifact generation.
 
+## Engineering Rules
+- Always evaluate necessary environment variables before attempting to fix potential false positives from the editor.
+- Company metadata is tracked by default but must not influence rubric scoring unless an explicit, defensible company-specific evaluation rule is defined.
+
 ## Initial Scope
 - Manual job description ingestion
 - Local SQLite-backed storage

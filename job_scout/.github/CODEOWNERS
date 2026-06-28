@@ -1,0 +1,12 @@
+# Default ownership
+* @srstanl
+
+# Documentation and feedback artifacts
+/README.md @srstanl
+/CONTRIBUTING.md @srstanl
+/docs/ @srstanl
+
+# Evaluation engine and models
+/job_scout/ @srstanl
+/profiles/ @srstanl
+/tests/ @srstanl

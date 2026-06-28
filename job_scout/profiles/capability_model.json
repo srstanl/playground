@@ -1,0 +1,35 @@
+{
+  "model_version": "v1",
+  "capabilities": [
+    {
+      "name": "continuous_delivery",
+      "aliases": ["ci/cd", "continuous delivery", "delivery pipelines", "release engineering"],
+      "tools": ["jenkins", "github actions", "azure devops", "gitlab ci", "octopus deploy"]
+    },
+    {
+      "name": "infrastructure_automation",
+      "aliases": ["infrastructure as code", "iac", "platform provisioning", "infrastructure automation"],
+      "tools": ["terraform", "pulumi", "bicep", "cloudformation", "arm templates"]
+    },
+    {
+      "name": "observability",
+      "aliases": ["monitoring", "telemetry", "logging", "tracing", "observability"],
+      "tools": ["splunk", "elk", "prometheus", "grafana", "opentelemetry", "graylog", "azure app insights"]
+    },
+    {
+      "name": "container_orchestration",
+      "aliases": ["container orchestration", "platform runtime", "kubernetes administration"],
+      "tools": ["docker", "kubernetes", "helm"]
+    },
+    {
+      "name": "cloud_enablement",
+      "aliases": ["cloud adoption", "cloud enablement", "cloud platform"],
+      "tools": ["azure", "aws", "gcp"]
+    },
+    {
+      "name": "identity_access",
+      "aliases": ["identity", "access management", "authentication", "authorization"],
+      "tools": ["entra id", "okta", "auth0", "keycloak", "rbac"]
+    }
+  ]
+}
