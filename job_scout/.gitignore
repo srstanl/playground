@@ -31,3 +31,6 @@ Thumbs.db
 
 # Misc
 *.log
+*.json.txt
+evaluation_item_*.txt
+job.txt
