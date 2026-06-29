@@ -22,18 +22,26 @@ Projects here are allowed to be rough, incomplete, or short-lived. The point is 
 ## Current Focus
 - `problem_recommender` is the current highest-signal project in this repository.
 - The active direction is to keep the CLI surface intact while shaping shared service logic, a deployable API boundary, and an eventual React UI MVP.
+- `job_scout` now has working ingestion and evaluation MVPs, and tracking has started as the next local-first workflow slice.
 
 ## Current Status
 - Shared recommendation and corpus services have been extracted for reuse.
 - A FastAPI MVP slice exists with health and recommend endpoints.
 - The next delivery lane is tightening API contracts, runtime assumptions, and CI/CD onboarding readiness.
 - React UI scope is now explicit enough to track as a parallel MVP lane rather than a vague future idea.
+- `job_scout` now supports:
+  - manual ingestion
+  - batch `jsonl` ingestion
+  - profile-driven evaluation
+  - capability-aware reasoning
+  - initial application tracking via CLI
 
 ## Immediate Next Steps
 1. Finish the request/response and testing contracts for the API lane.
 2. Tighten storage, config, and observability assumptions.
 3. Continue React UI MVP planning and shell implementation.
 4. Decide when `problem_recommender` has earned transfer into `incubator`.
+5. Continue hardening `job_scout` tracking behavior and decide when it is mature enough for broader lifecycle analytics.
 
 ## Session Conventions
 - Keyword: `start session`

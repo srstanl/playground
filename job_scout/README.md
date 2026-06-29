@@ -42,6 +42,7 @@ Current capabilities include:
 
 - local-first CLI workflow
 - manual job description ingestion
+- batch job description ingestion via `jsonl`
 - SQLite-backed storage
 - profile-driven evaluation
 - capability extraction
@@ -49,7 +50,7 @@ Current capabilities include:
 - environment and risk detection
 - compensation extraction
 - narrative recommendations
-- application-tracking foundation
+- application tracking via CLI
 
 The system is intentionally human-in-the-loop.
 
@@ -113,10 +114,26 @@ Current workflow:
 
 ```bash
 python -m job_scout.cli ingest --file ./job.txt --source-system linkedin
+python -m job_scout.cli ingest-batch --jsonl ./jobs.jsonl
 python -m job_scout.cli evaluate 1
+python -m job_scout.cli track init 1 --decision apply --status application_ready
+python -m job_scout.cli track update 1 --status applied
+python -m job_scout.cli track show 1
+python -m job_scout.cli track list --status applied
 python -m job_scout.cli list
 python -m job_scout.cli show 1
 ```
+
+Tracking outcomes support both candidate-driven and process-driven endings, including:
+
+- `rejected`
+- `withdrawn`
+- `offer_declined`
+- `offer_accepted`
+- `position_closed`
+- `hiring_paused`
+
+Batch ingestion currently supports newline-delimited JSON (`jsonl`) with one job posting per line. See `docs/batch_ingestion.md`.
 
 ## Configuration
 
@@ -202,10 +219,10 @@ See `CONTRIBUTING.md` for working conventions.
 - `job_scout/config.py` - runtime configuration
 - `job_scout/db.py` - SQLite schema and persistence helpers
 - `job_scout/evaluator.py` - extraction and scoring orchestration
-- `job_scout/evaluation_model_loader.py` - evaluation model loader
-- `job_scout/capability_model_loader.py` - capability ontology loader
-- `job_scout/profile_loader.py` - local profile loader
-- `job_scout/models.py` - domain models
+- `job_scout/loaders/` - JSON loaders for profile and evaluation configuration
+- `job_scout/models/` - domain models
+- `docs/batch_ingestion.md` - batch import contract for multi-job ingestion
+- `docs/tracking_mvp.md` - tracking scope, lifecycle, and v1 design
 - `profiles/` - tracked evaluation configuration plus local profile template
 - `docs/feedback/` - saved review artifacts and iteration context
 - `CONTRIBUTING.md` - contribution guidelines

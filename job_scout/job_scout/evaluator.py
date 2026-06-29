@@ -8,10 +8,12 @@ from functools import lru_cache
 import json
 import re
 
-from job_scout.capability_model_loader import load_capability_model
 from job_scout.config import get_settings
-from job_scout.evaluation_model_loader import load_evaluation_model
-from job_scout.profile_loader import load_user_profile
+from job_scout.loaders import (
+    load_capability_model,
+    load_evaluation_model,
+    load_user_profile,
+)
 from job_scout.models import (
     CapabilityModel,
     CompensationBand,

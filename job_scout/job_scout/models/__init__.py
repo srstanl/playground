@@ -37,6 +37,39 @@ class JobPosting:
 
 
 @dataclass
+class ApplicationRecordCreate:
+    """Input payload for creating or updating a tracked application record."""
+
+    job_posting_id: int
+    decision: str = "unreviewed"
+    status: str = "not_started"
+    outcome: str = "unknown"
+    applied_at: Optional[datetime] = None
+    last_event_at: Optional[datetime] = None
+    next_follow_up_at: Optional[datetime] = None
+    resume_variant: str = ""
+    notes: str = ""
+
+
+@dataclass
+class ApplicationRecord:
+    """Persisted tracking record for one job posting."""
+
+    id: int
+    job_posting_id: int
+    decision: str
+    status: str
+    outcome: str
+    applied_at: Optional[datetime]
+    last_event_at: Optional[datetime]
+    next_follow_up_at: Optional[datetime]
+    resume_variant: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass
 class CompensationRange:
     """Structured compensation information extracted from a posting."""
 
