@@ -78,6 +78,9 @@ def _load_targeting(payload: dict[str, object]) -> TargetingPreferences:
         target_roles=_string_list(payload.get("target_roles")),
         acceptable_roles=_string_list(payload.get("acceptable_roles")),
         role_seniority=_string_list(payload.get("role_seniority")),
+        preferred_personas=_persona_list(payload.get("preferred_personas")),
+        acceptable_personas=_persona_list(payload.get("acceptable_personas")),
+        avoid_personas=_persona_list(payload.get("avoid_personas")),
     )
 
 
@@ -179,6 +182,21 @@ def _string_list(value: object) -> list[str]:
     if not isinstance(value, list):
         return []
     return [str(item) for item in value]
+
+
+def _persona_list(value: object) -> list[str]:
+    return [_normalize_persona_name(item) for item in _string_list(value)]
+
+
+def _normalize_persona_name(value: str) -> str:
+    aliases = {
+        "developer_enablement": "delivery_enablement",
+        "platform_engineering": "platform_delivery",
+        "operations": "infrastructure_ownership",
+        "infrastructure_owner": "infrastructure_ownership",
+    }
+    normalized = value.strip().lower()
+    return aliases.get(normalized, normalized)
 
 
 def _int_value(value: object) -> int:

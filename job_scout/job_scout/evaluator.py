@@ -104,6 +104,11 @@ def extract_job_posting(
     work_mode = _detect_work_mode(lowered, evaluation_model)
     location_text = job_posting.location or _extract_location_text(text, evaluation_model)
     detected_tools, detected_capabilities = _extract_capability_signals(text, capability_model)
+    engineering_persona, engineering_persona_scores, persona_evidence = _detect_engineering_persona(
+        text,
+        detected_capabilities,
+        evaluation_model,
+    )
     required_skills, preferred_skills, skill_evidence = _extract_skills(
         text,
         evaluation_model,
@@ -123,6 +128,7 @@ def extract_job_posting(
     evidence = [
         EvidenceItem(topic="title", snippet=title),
         EvidenceItem(topic="seniority", snippet=seniority, is_inference=True),
+        *persona_evidence,
         *skill_evidence,
     ]
 
@@ -144,6 +150,8 @@ def extract_job_posting(
         employment_type=employment_type,
         location_text=location_text,
         work_mode=work_mode,
+        engineering_persona=engineering_persona,
+        engineering_persona_scores=engineering_persona_scores,
         semantic_shapes=semantic_shapes,
         detected_tools=detected_tools,
         detected_capabilities=detected_capabilities,
@@ -169,6 +177,7 @@ def score_extraction(
     dimensions = [
         _problem_shape_alignment_dimension(extraction, evaluation_model, user_profile),
         _role_scope_alignment_dimension(extraction, evaluation_model, user_profile),
+        _engineering_persona_alignment_dimension(extraction, evaluation_model, user_profile),
         _tool_adjacency_dimension(extraction, evaluation_model, user_profile),
         _domain_alignment_dimension(extraction, evaluation_model, user_profile),
         _compensation_alignment_dimension(extraction, evaluation_model, user_profile),
@@ -490,7 +499,7 @@ def _problem_shape_alignment_dimension(
     return ScoreDimension(
         name="problem_shape_alignment",
         score=score,
-        weight=_dimension_weight(evaluation_model, "problem_shape_alignment", 0.40),
+        weight=_dimension_weight(evaluation_model, "problem_shape_alignment", 0.30),
         rationale=rationale,
         evidence=evidence,
     )
@@ -523,7 +532,45 @@ def _role_scope_alignment_dimension(
     return ScoreDimension(
         name="role_scope_alignment",
         score=score,
-        weight=_dimension_weight(evaluation_model, "role_scope_alignment", 0.20),
+        weight=_dimension_weight(evaluation_model, "role_scope_alignment", 0.15),
+        rationale=rationale,
+        evidence=evidence,
+    )
+
+
+def _engineering_persona_alignment_dimension(
+    extraction: ExtractionResult,
+    evaluation_model: EvaluationModel,
+    user_profile: UserProfile,
+) -> ScoreDimension:
+    persona = extraction.engineering_persona
+    preferred = {value.lower() for value in user_profile.targeting.preferred_personas}
+    acceptable = {value.lower() for value in user_profile.targeting.acceptable_personas}
+    avoided = {value.lower() for value in user_profile.targeting.avoid_personas}
+
+    if persona in avoided:
+        score = 1
+        rationale = f"Role creates value mainly through an avoided engineering persona: {persona}."
+    elif persona in preferred:
+        score = 5
+        rationale = f"Role creates value through a preferred engineering persona: {persona}."
+    elif persona in acceptable:
+        score = 4
+        rationale = f"Role creates value through an acceptable adjacent engineering persona: {persona}."
+    elif persona == "unknown":
+        score = 3
+        rationale = "Posting does not clearly signal where the team expects engineering value to be created."
+    else:
+        score = 2
+        rationale = f"Role persona {persona} is outside the preferred engineering value lanes."
+
+    evidence = [item for item in extraction.evidence if item.topic == "engineering_persona"][:2]
+    if not evidence and persona != "unknown":
+        evidence = [EvidenceItem(topic="engineering_persona", snippet=persona, is_inference=True)]
+    return ScoreDimension(
+        name="engineering_persona_alignment",
+        score=score,
+        weight=_dimension_weight(evaluation_model, "engineering_persona_alignment", 0.10),
         rationale=rationale,
         evidence=evidence,
     )
@@ -796,6 +843,10 @@ def _extraction_text(extraction: ExtractionResult) -> str:
             extraction.work_mode.lower(),
             extraction.employment_type.lower(),
             extraction.location_text.lower(),
+            extraction.engineering_persona.lower(),
+            " ".join(
+                f"{key} {value}" for key, value in extraction.engineering_persona_scores.items()
+            ).lower(),
             " ".join(f"{key} {value}" for key, value in extraction.semantic_shapes.items()).lower(),
             " ".join(extraction.detected_tools).lower(),
             " ".join(extraction.detected_capabilities).lower(),
@@ -816,6 +867,54 @@ def _score_from_match_count(match_count: int, strong_threshold: int, medium_thre
     if match_count >= 1:
         return 3
     return 2
+
+
+def _detect_engineering_persona(
+    text: str,
+    detected_capabilities: list[str],
+    evaluation_model: EvaluationModel,
+) -> tuple[str, dict[str, int], list[EvidenceItem]]:
+    lowered = text.lower()
+    scores: dict[str, int] = {}
+    evidence_terms: dict[str, list[str]] = {}
+
+    for persona, terms in evaluation_model.engineering_persona_signals.items():
+        matches = [term for term in terms if term.lower() in lowered]
+        if matches:
+            scores[persona] = min(5, len(matches))
+            evidence_terms[persona] = matches[:2]
+
+    capability_bonus_map = {
+        "delivery_enablement": {"continuous_delivery", "observability"},
+        "platform_delivery": {"continuous_delivery", "observability"},
+        "platform_infrastructure": {
+            "cloud_enablement",
+            "infrastructure_automation",
+            "container_orchestration",
+        },
+        "infrastructure_ownership": {"observability", "container_orchestration"},
+        "operations": {"observability", "container_orchestration"},
+        "security": {"identity_access"},
+    }
+    capability_set = set(detected_capabilities)
+    for persona, capability_names in capability_bonus_map.items():
+        overlap = capability_set & capability_names
+        if overlap:
+            scores[persona] = min(5, scores.get(persona, 0) + len(overlap))
+            evidence_terms.setdefault(persona, []).extend(sorted(overlap))
+
+    if not scores:
+        return "unknown", {}, []
+
+    best_persona, best_score = sorted(
+        scores.items(),
+        key=lambda item: (-item[1], item[0]),
+    )[0]
+    evidence = [
+        EvidenceItem(topic="engineering_persona", snippet=term, is_inference=True)
+        for term in evidence_terms.get(best_persona, [])[:2]
+    ]
+    return best_persona, {key: min(5, value) for key, value in scores.items()}, evidence
 
 
 def _classify_semantic_shapes(text: str, detected_capabilities: list[str]) -> dict[str, int]:
@@ -908,6 +1007,12 @@ def _build_narrative(
     fit_bits: list[str] = []
     if top_shapes:
         fit_bits.append(f"it is shaped around {', '.join(top_shapes)}")
+    if extraction.engineering_persona != "unknown" and top_dimensions.get("engineering_persona_alignment"):
+        persona_text = extraction.engineering_persona.replace("_", " ")
+        if top_dimensions["engineering_persona_alignment"].score >= 4:
+            fit_bits.append(f"the team appears to create value through {persona_text}")
+        elif top_dimensions["engineering_persona_alignment"].score <= 2:
+            fit_bits.append(f"the role leans toward {persona_text}, which may be a poor persona match")
     if top_dimensions.get("identity_drift") and top_dimensions["identity_drift"].score >= 4:
         fit_bits.append("it stays close to your platform and enablement identity")
     if top_dimensions.get("environment_alignment") and top_dimensions["environment_alignment"].score >= 4:

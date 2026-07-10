@@ -20,6 +20,11 @@ def load_evaluation_model(path: Path) -> EvaluationModel:
         authorization_patterns=list(payload.get("authorization_patterns", [])),
         preferred_skill_markers=list(payload.get("preferred_skill_markers", [])),
         work_mode_terms=dict(payload.get("work_mode_terms", {})),
+        engineering_persona_signals={
+            str(key): [str(item) for item in value]
+            for key, value in dict(payload.get("engineering_persona_signals", {})).items()
+            if isinstance(value, list)
+        },
         dimensions=dict(payload.get("dimensions", {})),
         thresholds=RecommendationThresholds(
             apply=thresholds_payload.get("apply", 75),

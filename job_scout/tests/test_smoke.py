@@ -1,9 +1,16 @@
 from contextlib import redirect_stdout
+from datetime import UTC, datetime
 from io import StringIO
+import os
 from pathlib import Path
 import unittest
 
 from job_scout import cli
+from job_scout.evaluation_model_loader import load_evaluation_model
+from job_scout.models import JobPosting, TargetingPreferences, UserProfile
+
+
+FIXTURE_ROOT = Path(__file__).resolve().parents[1]
 
 
 class JobScoutCliTests(unittest.TestCase):
@@ -80,6 +87,8 @@ class JobScoutCliTests(unittest.TestCase):
         self.assertIn("Senior platform engineering role focused on CI/CD.", show_output.getvalue())
 
     def test_evaluate_job(self) -> None:
+        from job_scout import evaluator
+
         temp_dir = Path(self.id().replace(".", "_"))
         temp_dir.mkdir(exist_ok=True)
         database_path = temp_dir / "job_scout.db"
@@ -100,7 +109,16 @@ class JobScoutCliTests(unittest.TestCase):
         )
 
         original_database_path = cli._database_path
+        original_profile_path = os.environ.get("JOB_SCOUT_PROFILE_PATH")
+        original_evaluation_model_path = os.environ.get("JOB_SCOUT_EVALUATION_MODEL_PATH")
+        original_capability_model_path = os.environ.get("JOB_SCOUT_CAPABILITY_MODEL_PATH")
         cli._database_path = lambda: database_path
+        os.environ["JOB_SCOUT_PROFILE_PATH"] = str(FIXTURE_ROOT / "profiles" / "user_profile.example.json")
+        os.environ["JOB_SCOUT_EVALUATION_MODEL_PATH"] = str(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        os.environ["JOB_SCOUT_CAPABILITY_MODEL_PATH"] = str(FIXTURE_ROOT / "profiles" / "capability_model.json")
+        evaluator.get_default_user_profile.cache_clear()
+        evaluator.get_default_evaluation_model.cache_clear()
+        evaluator.get_default_capability_model.cache_clear()
         try:
             with redirect_stdout(StringIO()):
                 ingest_exit = cli.run(
@@ -124,6 +142,21 @@ class JobScoutCliTests(unittest.TestCase):
                 json_exit = cli.run(["evaluate", "1", "--json"])
         finally:
             cli._database_path = original_database_path
+            if original_profile_path is None:
+                os.environ.pop("JOB_SCOUT_PROFILE_PATH", None)
+            else:
+                os.environ["JOB_SCOUT_PROFILE_PATH"] = original_profile_path
+            if original_evaluation_model_path is None:
+                os.environ.pop("JOB_SCOUT_EVALUATION_MODEL_PATH", None)
+            else:
+                os.environ["JOB_SCOUT_EVALUATION_MODEL_PATH"] = original_evaluation_model_path
+            if original_capability_model_path is None:
+                os.environ.pop("JOB_SCOUT_CAPABILITY_MODEL_PATH", None)
+            else:
+                os.environ["JOB_SCOUT_CAPABILITY_MODEL_PATH"] = original_capability_model_path
+            evaluator.get_default_user_profile.cache_clear()
+            evaluator.get_default_evaluation_model.cache_clear()
+            evaluator.get_default_capability_model.cache_clear()
             if database_path.exists():
                 database_path.unlink()
             if job_file.exists():
@@ -135,14 +168,119 @@ class JobScoutCliTests(unittest.TestCase):
         self.assertIn("recommendation:", evaluate_output.getvalue())
         self.assertIn("overall_score:", evaluate_output.getvalue())
         self.assertIn("narrative:", evaluate_output.getvalue())
+        self.assertIn("engineering_persona:", evaluate_output.getvalue())
         self.assertIn("semantic_shapes:", evaluate_output.getvalue())
         self.assertIn("- problem_shape_alignment:", evaluate_output.getvalue())
+        self.assertIn("- engineering_persona_alignment:", evaluate_output.getvalue())
         self.assertIn("- role_scope_alignment:", evaluate_output.getvalue())
         self.assertIn("- environment_alignment:", evaluate_output.getvalue())
         self.assertEqual(json_exit, 0)
         self.assertIn('"contract_version": "v1"', json_output.getvalue())
         self.assertIn('"job_posting_id": 1', json_output.getvalue())
         self.assertIn('"semantic_shapes"', json_output.getvalue())
+        self.assertIn('"engineering_persona"', json_output.getvalue())
+
+
+class EngineeringPersonaEvaluationTests(unittest.TestCase):
+    def test_preferred_persona_scores_high(self) -> None:
+        from job_scout.evaluator import evaluate_job_posting
+
+        evaluation_model = load_evaluation_model(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        profile = UserProfile(
+            targeting=TargetingPreferences(
+                preferred_personas=["platform_delivery"],
+                acceptable_personas=["platform_infrastructure"],
+                avoid_personas=["application_features"],
+            )
+        )
+        posting = JobPosting(
+            id=1,
+            source_type="manual_text",
+            source_system="test",
+            source_url=None,
+            source_reference=None,
+            company="Example Co",
+            title="Platform Engineer",
+            location="Remote",
+            status="new",
+            raw_description=(
+                "Own CI/CD standards, release engineering, deployment automation, "
+                "and engineering guardrails for product teams shipping software."
+            ),
+            created_at=datetime.now(UTC),
+        )
+
+        evaluation = evaluate_job_posting(posting, evaluation_model=evaluation_model, user_profile=profile)
+        dimensions = {dimension.name: dimension for dimension in evaluation.scoring.dimensions}
+
+        self.assertEqual(evaluation.extraction.engineering_persona, "platform_delivery")
+        self.assertEqual(dimensions["engineering_persona_alignment"].score, 5)
+
+    def test_avoided_persona_scores_low(self) -> None:
+        from job_scout.evaluator import evaluate_job_posting
+
+        evaluation_model = load_evaluation_model(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        profile = UserProfile(
+            targeting=TargetingPreferences(
+                preferred_personas=["platform_delivery"],
+                acceptable_personas=["platform_infrastructure"],
+                avoid_personas=["application_features"],
+            )
+        )
+        posting = JobPosting(
+            id=2,
+            source_type="manual_text",
+            source_system="test",
+            source_url=None,
+            source_reference=None,
+            company="Example Co",
+            title="Senior Software Engineer",
+            location="Remote",
+            status="new",
+            raw_description=(
+                "Build customer-facing product features across frontend and backend services. "
+                "Partner with product and design to ship user-facing experiences and growth experiments."
+            ),
+            created_at=datetime.now(UTC),
+        )
+
+        evaluation = evaluate_job_posting(posting, evaluation_model=evaluation_model, user_profile=profile)
+        dimensions = {dimension.name: dimension for dimension in evaluation.scoring.dimensions}
+
+        self.assertEqual(evaluation.extraction.engineering_persona, "application_features")
+        self.assertEqual(dimensions["engineering_persona_alignment"].score, 1)
+
+    def test_profile_loader_normalizes_legacy_persona_aliases(self) -> None:
+        import json
+
+        from job_scout.profile_loader import load_user_profile
+
+        temp_dir = Path(self.id().replace(".", "_"))
+        temp_dir.mkdir(exist_ok=True)
+        profile_path = temp_dir / "user_profile.json"
+        profile_path.write_text(
+            json.dumps(
+                {
+                    "targeting": {
+                        "preferred_personas": ["developer_enablement", "platform_engineering"],
+                        "acceptable_personas": ["operations"],
+                        "avoid_personas": ["infrastructure_owner"],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        try:
+            profile = load_user_profile(profile_path)
+        finally:
+            if profile_path.exists():
+                profile_path.unlink()
+            temp_dir.rmdir()
+
+        self.assertIn("delivery_enablement", profile.targeting.preferred_personas)
+        self.assertIn("platform_delivery", profile.targeting.preferred_personas)
+        self.assertIn("infrastructure_ownership", profile.targeting.acceptable_personas)
+        self.assertIn("infrastructure_ownership", profile.targeting.avoid_personas)
 
 
 class EvaluationModelTests(unittest.TestCase):
@@ -171,14 +309,13 @@ class UserProfileLoaderTests(unittest.TestCase):
     def test_load_user_profile_example(self) -> None:
         from job_scout.profile_loader import load_user_profile
 
-        profile = load_user_profile(
-            Path("/Users/srstanl/FAFO/playground/job_scout/profiles/user_profile.example.json")
-        )
+        profile = load_user_profile(FIXTURE_ROOT / "profiles" / "user_profile.example.json")
 
         self.assertEqual(profile.profile_version, "v2")
         self.assertEqual(profile.identity.headline, "Senior Platform & Software Engineer")
         self.assertIn("Platform Engineering", profile.problem_spaces.primary)
         self.assertIn("Platform Engineer", profile.targeting.target_roles)
+        self.assertIn("platform_delivery", profile.targeting.preferred_personas)
         self.assertIn("Python", profile.skills.languages)
         self.assertEqual(profile.preferences.compensation.currency, "USD")
         self.assertIn("problem_shape", profile.evaluation_preferences.weights)
@@ -189,9 +326,7 @@ class CapabilityModelLoaderTests(unittest.TestCase):
     def test_load_capability_model(self) -> None:
         from job_scout.capability_model_loader import load_capability_model
 
-        model = load_capability_model(
-            Path("/Users/srstanl/FAFO/playground/job_scout/profiles/capability_model.json")
-        )
+        model = load_capability_model(FIXTURE_ROOT / "profiles" / "capability_model.json")
 
         self.assertEqual(model.model_version, "v1")
         capability_names = [capability.name for capability in model.capabilities]

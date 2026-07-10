@@ -165,6 +165,7 @@ def run(argv: list[str] | None = None) -> int:
         print(f"overall_score: {evaluation.summary.overall_score}")
         print(f"confidence_score: {evaluation.summary.confidence_score}")
         print(f"narrative: {evaluation.summary.narrative}")
+        print(f"engineering_persona: {evaluation.extraction.engineering_persona}")
         if evaluation.extraction.semantic_shapes:
             print("")
             print("semantic_shapes:")

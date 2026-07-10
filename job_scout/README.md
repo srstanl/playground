@@ -25,6 +25,7 @@ Job Scout optimizes for **fit**.
 Instead of counting nouns, it evaluates:
 
 - engineering problem shape
+- engineering persona alignment
 - role scope
 - capability alignment
 - operating environment
@@ -45,6 +46,7 @@ Current capabilities include:
 - SQLite-backed storage
 - profile-driven evaluation
 - capability extraction
+- engineering persona detection
 - semantic role-shape classification
 - environment and risk detection
 - compensation extraction
@@ -79,6 +81,12 @@ A stronger application should not require becoming a different engineer.
 
 The evaluator rewards roles that align with professional identity and highlights roles that introduce unnecessary identity drift.
 
+It also asks a more direct question before recommending a role:
+
+> *Where does this team expect me to create engineering value?*
+
+The answer may be application features, delivery enablement, platform delivery, platform infrastructure, infrastructure ownership, security, or data engineering. That expected value lane is scored against the candidate's preferred engineering persona rather than being buried inside title or tooling heuristics.
+
 ### Explainable Decisions
 
 Every recommendation should answer:
@@ -112,7 +120,7 @@ python -m job_scout.cli --help
 Current workflow:
 
 ```bash
-python -m job_scout.cli ingest --file ./job.txt --source-system linkedin
+python -m job_scout.cli ingest --file ./data/inputs/jd/example_job.txt --source-system linkedin
 python -m job_scout.cli evaluate 1
 python -m job_scout.cli list
 python -m job_scout.cli show 1
@@ -124,11 +132,30 @@ Optional environment overrides:
 
 ```bash
 export JOB_SCOUT_DATA_DIR=./data
-export JOB_SCOUT_DATABASE_PATH=./data/job_scout.db
-export JOB_SCOUT_PROFILE_PATH=./profiles/user_profile.local.json
+export JOB_SCOUT_DATABASE_PATH=./data/db/job_scout.db
+export JOB_SCOUT_PROFILE_PATH=./profiles/user_profile.json
 export JOB_SCOUT_EVALUATION_MODEL_PATH=./profiles/evaluation_model.json
 export JOB_SCOUT_CAPABILITY_MODEL_PATH=./profiles/capability_model.json
 ```
+
+Recommended local runtime layout:
+
+```text
+data/
+  db/
+    job_scout.db
+  inputs/
+    jd/
+  reports/
+```
+
+Use this separation consistently:
+
+- `profiles/` for tracked templates and repository-owned evaluation models
+- `profiles/user_profile.json` for your real local profile
+- `data/inputs/jd/` for local job-description inputs
+- `data/reports/` for generated local evaluation reports
+- `data/db/` for the local SQLite database
 
 ## Profile and Models
 
@@ -137,12 +164,12 @@ Job Scout separates repository-owned evaluation logic from user-owned career inf
 **Local user profile**
 
 - `profiles/user_profile.example.json` - tracked template
-- `profiles/user_profile.local.json` - ignored local profile with real values
+- `profiles/user_profile.json` - ignored local profile with real values
 
 Create your local profile:
 
 ```bash
-cp profiles/user_profile.example.json profiles/user_profile.local.json
+cp profiles/user_profile.example.json profiles/user_profile.json
 ```
 
 The local profile defines your:

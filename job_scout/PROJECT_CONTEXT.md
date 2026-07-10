@@ -28,3 +28,8 @@ Build a local-first job application intelligence assistant that helps ingest job
 - Application code lives under `job_scout/`
 - Tests live under `tests/`
 - Local runtime artifacts should eventually live under ignored `data/` paths
+- Standard local runtime layout:
+  - `data/db/` for the SQLite database
+  - `data/inputs/jd/` for job-description inputs
+  - `data/reports/` for generated evaluation reports
+- Real user profile data should live in ignored `profiles/user_profile.json`; only the example profile stays tracked

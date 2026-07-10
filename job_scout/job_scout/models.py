@@ -76,6 +76,8 @@ class ExtractionResult:
     employment_type: str = "unknown"
     location_text: str = ""
     work_mode: str = "unknown"
+    engineering_persona: str = "unknown"
+    engineering_persona_scores: dict[str, int] = field(default_factory=dict)
     semantic_shapes: dict[str, int] = field(default_factory=dict)
     detected_tools: list[str] = field(default_factory=list)
     detected_capabilities: list[str] = field(default_factory=list)
@@ -174,6 +176,7 @@ class EvaluationModel:
     authorization_patterns: list[str] = field(default_factory=list)
     preferred_skill_markers: list[str] = field(default_factory=list)
     work_mode_terms: dict[str, list[str]] = field(default_factory=dict)
+    engineering_persona_signals: dict[str, list[str]] = field(default_factory=dict)
     dimensions: dict[str, float] = field(default_factory=dict)
     thresholds: RecommendationThresholds = field(default_factory=RecommendationThresholds)
     risk_rules: list[RiskRule] = field(default_factory=list)
@@ -230,6 +233,9 @@ class TargetingPreferences:
     target_roles: list[str] = field(default_factory=list)
     acceptable_roles: list[str] = field(default_factory=list)
     role_seniority: list[str] = field(default_factory=list)
+    preferred_personas: list[str] = field(default_factory=list)
+    acceptable_personas: list[str] = field(default_factory=list)
+    avoid_personas: list[str] = field(default_factory=list)
 
 
 @dataclass
