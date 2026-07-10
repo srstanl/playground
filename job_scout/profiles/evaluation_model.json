@@ -56,9 +56,98 @@
     "hybrid": ["hybrid"],
     "onsite": ["on-site", "onsite", "on site"]
   },
+  "engineering_persona_signals": {
+    "application_features": [
+      "customer-facing",
+      "customer facing",
+      "user-facing",
+      "product feature",
+      "feature development",
+      "frontend",
+      "ui",
+      "ux",
+      "mobile app",
+      "growth experiments"
+    ],
+    "delivery_enablement": [
+      "developer experience",
+      "developer productivity",
+      "developer enablement",
+      "delivery enablement",
+      "internal tooling",
+      "engineering productivity",
+      "golden path",
+      "guardrails",
+      "self-service workflows",
+      "paved road"
+    ],
+    "platform_delivery": [
+      "ci/cd",
+      "continuous delivery",
+      "release engineering",
+      "delivery pipeline",
+      "deployment automation",
+      "software delivery",
+      "release orchestration",
+      "build platform",
+      "engineering guardrails"
+    ],
+    "platform_infrastructure": [
+      "platform",
+      "internal developer platform",
+      "cloud infrastructure",
+      "infrastructure automation",
+      "runtime platform",
+      "platform reliability",
+      "shared services",
+      "service platform"
+    ],
+    "infrastructure_ownership": [
+      "infrastructure ownership",
+      "production operations",
+      "production support",
+      "infrastructure support",
+      "24/7 support",
+      "pager rotation",
+      "operational support",
+      "service ownership"
+    ],
+    "operations": [
+      "incident response",
+      "on-call",
+      "operational excellence",
+      "service reliability",
+      "production support",
+      "sre",
+      "runbooks",
+      "availability"
+    ],
+    "security": [
+      "security engineering",
+      "application security",
+      "identity and access",
+      "threat modeling",
+      "security controls",
+      "iam",
+      "zero trust",
+      "vulnerability management"
+    ],
+    "data_engineering": [
+      "data pipeline",
+      "etl",
+      "elt",
+      "warehouse",
+      "analytics engineering",
+      "stream processing",
+      "batch ingestion",
+      "data platform",
+      "dbt"
+    ]
+  },
   "dimensions": {
-    "problem_shape_alignment": 0.35,
-    "role_scope_alignment": 0.2,
+    "problem_shape_alignment": 0.3,
+    "role_scope_alignment": 0.15,
+    "engineering_persona_alignment": 0.1,
     "tool_adjacency": 0.1,
     "environment_alignment": 0.1,
     "compensation_alignment": 0.1,

@@ -34,6 +34,17 @@
     "acceptable_roles": [
       "Senior Software Engineer"
     ],
+    "preferred_personas": [
+      "delivery_enablement",
+      "platform_delivery"
+    ],
+    "acceptable_personas": [
+      "platform_infrastructure"
+    ],
+    "avoid_personas": [
+      "infrastructure_ownership",
+      "application_features"
+    ],
     "role_seniority": [
       "senior",
       "staff"
@@ -110,8 +121,9 @@
   },
   "evaluation_preferences": {
     "weights": {
-      "problem_shape": 0.4,
-      "role_scope": 0.2,
+      "problem_shape": 0.3,
+      "role_scope": 0.15,
+      "engineering_persona": 0.1,
       "tool_adjacency": 0.1,
       "environment_alignment": 0.1,
       "compensation": 0.1,

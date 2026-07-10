@@ -25,6 +25,7 @@ Job Scout optimizes for **fit**.
 Instead of counting nouns, it evaluates:
 
 - engineering problem shape
+- engineering persona alignment
 - role scope
 - capability alignment
 - operating environment
@@ -45,6 +46,7 @@ Current capabilities include:
 - SQLite-backed storage
 - profile-driven evaluation
 - capability extraction
+- engineering persona detection
 - semantic role-shape classification
 - environment and risk detection
 - compensation extraction
@@ -78,6 +80,12 @@ Job Scout evaluates the work being described rather than only matching technolog
 A stronger application should not require becoming a different engineer.
 
 The evaluator rewards roles that align with professional identity and highlights roles that introduce unnecessary identity drift.
+
+It also asks a more direct question before recommending a role:
+
+> *Where does this team expect me to create engineering value?*
+
+The answer may be application features, delivery enablement, platform delivery, platform infrastructure, infrastructure ownership, security, or data engineering. That expected value lane is scored against the candidate's preferred engineering persona rather than being buried inside title or tooling heuristics.
 
 ### Explainable Decisions
 

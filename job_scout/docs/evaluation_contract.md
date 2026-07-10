@@ -46,6 +46,7 @@ Normalize the job posting into structured fields.
 - `employment_type`
 - `location_text`
 - `work_mode`
+- `engineering_persona`
 - `required_skills`
 - `preferred_skills`
 - `required_experience`
@@ -68,6 +69,7 @@ Apply the rubric to the extracted structure, not directly to raw free text.
 
 #### Baseline Scoring Dimensions
 - `role_alignment`
+- `engineering_persona_alignment`
 - `skills_alignment`
 - `seniority_alignment`
 - `location_alignment`
@@ -121,6 +123,7 @@ The evaluator returns one structured result per job posting.
     "employment_type": "full_time|contract|part_time|intern|unknown",
     "location_text": "...",
     "work_mode": "remote|hybrid|onsite|unknown",
+    "engineering_persona": "application_features|delivery_enablement|platform_delivery|platform_infrastructure|infrastructure_ownership|security|data_engineering|unknown",
     "required_skills": [],
     "preferred_skills": [],
     "required_experience": [],
