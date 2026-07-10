@@ -120,7 +120,7 @@ python -m job_scout.cli --help
 Current workflow:
 
 ```bash
-python -m job_scout.cli ingest --file ./job.txt --source-system linkedin
+python -m job_scout.cli ingest --file ./data/inputs/jd/example_job.txt --source-system linkedin
 python -m job_scout.cli evaluate 1
 python -m job_scout.cli list
 python -m job_scout.cli show 1
@@ -132,11 +132,30 @@ Optional environment overrides:
 
 ```bash
 export JOB_SCOUT_DATA_DIR=./data
-export JOB_SCOUT_DATABASE_PATH=./data/job_scout.db
-export JOB_SCOUT_PROFILE_PATH=./profiles/user_profile.local.json
+export JOB_SCOUT_DATABASE_PATH=./data/db/job_scout.db
+export JOB_SCOUT_PROFILE_PATH=./profiles/user_profile.json
 export JOB_SCOUT_EVALUATION_MODEL_PATH=./profiles/evaluation_model.json
 export JOB_SCOUT_CAPABILITY_MODEL_PATH=./profiles/capability_model.json
 ```
+
+Recommended local runtime layout:
+
+```text
+data/
+  db/
+    job_scout.db
+  inputs/
+    jd/
+  reports/
+```
+
+Use this separation consistently:
+
+- `profiles/` for tracked templates and repository-owned evaluation models
+- `profiles/user_profile.json` for your real local profile
+- `data/inputs/jd/` for local job-description inputs
+- `data/reports/` for generated local evaluation reports
+- `data/db/` for the local SQLite database
 
 ## Profile and Models
 
@@ -145,12 +164,12 @@ Job Scout separates repository-owned evaluation logic from user-owned career inf
 **Local user profile**
 
 - `profiles/user_profile.example.json` - tracked template
-- `profiles/user_profile.local.json` - ignored local profile with real values
+- `profiles/user_profile.json` - ignored local profile with real values
 
 Create your local profile:
 
 ```bash
-cp profiles/user_profile.example.json profiles/user_profile.local.json
+cp profiles/user_profile.example.json profiles/user_profile.json
 ```
 
 The local profile defines your:
