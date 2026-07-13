@@ -6,17 +6,16 @@ from typing import Optional
 
 
 @dataclass
-class JobPostingCreate:
-    """Input payload for a new job posting."""
+class JobPostingInput:
+    """User-supplied input payload for a new job posting."""
 
+    source_system: str
     raw_description: str
-    source_type: str = "manual_text"
-    source_system: str = "unknown"
-    source_url: Optional[str] = None
-    source_reference: Optional[str] = None
-    company: Optional[str] = None
     title: Optional[str] = None
+    company: Optional[str] = None
     location: Optional[str] = None
+    source_url: Optional[str] = None
+    external_ids: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -34,6 +33,40 @@ class JobPosting:
     status: str
     raw_description: str
     created_at: datetime
+    external_ids: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class ApplicationRecordCreate:
+    """Input payload for creating or updating a tracked application record."""
+
+    job_posting_id: int
+    decision: str = "unreviewed"
+    status: str = "not_started"
+    outcome: str = "unknown"
+    applied_at: Optional[datetime] = None
+    last_event_at: Optional[datetime] = None
+    next_follow_up_at: Optional[datetime] = None
+    resume_variant: str = ""
+    notes: str = ""
+
+
+@dataclass
+class ApplicationRecord:
+    """Persisted tracking record for one job posting."""
+
+    id: int
+    job_posting_id: int
+    decision: str
+    status: str
+    outcome: str
+    applied_at: Optional[datetime]
+    last_event_at: Optional[datetime]
+    next_follow_up_at: Optional[datetime]
+    resume_variant: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime
 
 
 @dataclass
