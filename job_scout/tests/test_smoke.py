@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import unittest
 
+from job_scout.adapters.browser import BrowserTabJobCapture
 from job_scout import cli
 from job_scout.evaluation_model_loader import load_evaluation_model
 from job_scout.models import JobPosting, TargetingPreferences, UserProfile
@@ -231,6 +232,61 @@ class JobScoutCliTests(unittest.TestCase):
         self.assertIn('"job_posting_id": 1', json_output.getvalue())
         self.assertIn('"semantic_shapes"', json_output.getvalue())
         self.assertIn('"engineering_persona"', json_output.getvalue())
+
+    def test_ingest_browser_tab_capture(self) -> None:
+        from job_scout.application.ingest import fetch_job, ingest_browser_tab_capture
+        from job_scout.db import connect, initialize_database
+
+        temp_dir = Path(self.id().replace(".", "_"))
+        temp_dir.mkdir(exist_ok=True)
+        database_path = temp_dir / "job_scout.db"
+
+        def connection_factory():
+            connection = connect(database_path)
+            initialize_database(connection)
+
+            class _ConnectionContext:
+                def __enter__(self_nonlocal):
+                    return connection
+
+                def __exit__(self_nonlocal, exc_type, exc, tb):
+                    connection.close()
+                    return False
+
+            return _ConnectionContext()
+
+        capture = BrowserTabJobCapture(
+            source_system="linkedin",
+            page_url="https://example.com/jobs/platform-engineer",
+            raw_description="Platform engineer role building delivery systems and internal tooling.",
+            captured_at=datetime(2026, 8, 2, 12, 0, tzinfo=UTC),
+            page_title="Platform Engineer - Example Co",
+            company="Example Co",
+            title="Platform Engineer",
+            location="Remote",
+            external_ids={"linkedin": "li-123"},
+            browser_name="chrome",
+            window_id="window-1",
+            tab_id="tab-7",
+        )
+        try:
+            job = ingest_browser_tab_capture(
+                capture=capture,
+                connection_factory=connection_factory,
+            )
+            fetched = fetch_job(job_id=job.id, connection_factory=connection_factory)
+        finally:
+            if database_path.exists():
+                database_path.unlink()
+            temp_dir.rmdir()
+
+        self.assertEqual(job.source_type, "browser_tab")
+        self.assertEqual(job.source_system, "linkedin")
+        self.assertEqual(job.source_url, "https://example.com/jobs/platform-engineer")
+        self.assertEqual(job.external_ids, {"linkedin": "li-123"})
+        self.assertEqual(fetched.company, "Example Co")
+        self.assertIn("captured_at=2026-08-02T12:00:00+00:00", fetched.source_reference or "")
+        self.assertIn("browser=chrome", fetched.source_reference or "")
 
     def test_track_init_show_update_and_list(self) -> None:
         temp_dir = Path(self.id().replace(".", "_"))

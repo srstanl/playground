@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Callable, ContextManager
 
+from job_scout.adapters.browser import BrowserTabJobCapture
 from job_scout.db import create_job_posting, get_job_posting, list_job_postings
 from job_scout.models import JobPosting, JobPostingInput
 
@@ -63,13 +64,12 @@ def ingest_job_description(
         location=location,
         external_ids=_external_ids_from_inputs(source_system, external_id),
     )
-    with connection_factory() as connection:
-        return create_job_posting(
-            connection,
-            payload,
-            source_type="uploaded_file",
-            source_reference=str(file_path),
-        )
+    return _ingest_payload(
+        payload=payload,
+        source_type="uploaded_file",
+        source_reference=str(file_path),
+        connection_factory=connection_factory,
+    )
 
 
 def ingest_batch(*, jsonl_path: Path, connection_factory: ConnectionFactory) -> IngestBatchResult:
@@ -145,6 +145,25 @@ def ingest_batch(*, jsonl_path: Path, connection_factory: ConnectionFactory) -> 
     )
 
 
+def ingest_browser_tab_capture(
+    *,
+    capture: BrowserTabJobCapture,
+    connection_factory: ConnectionFactory,
+) -> JobPosting:
+    """Ingest one job description captured from a browser tab."""
+    payload = capture.to_job_posting_input()
+    if not payload.source_system:
+        raise SystemExit("browser capture source_system is required")
+    if not payload.source_url:
+        raise SystemExit("browser capture page_url is required")
+    return _ingest_payload(
+        payload=payload,
+        source_type="browser_tab",
+        source_reference=capture.source_reference(),
+        connection_factory=connection_factory,
+    )
+
+
 def fetch_job(*, job_id: int, connection_factory: ConnectionFactory) -> JobPosting:
     """Fetch one persisted job posting."""
     with connection_factory() as connection:
@@ -155,6 +174,22 @@ def fetch_jobs(*, connection_factory: ConnectionFactory) -> list[JobPosting]:
     """Fetch all persisted job postings."""
     with connection_factory() as connection:
         return list_job_postings(connection)
+
+
+def _ingest_payload(
+    *,
+    payload: JobPostingInput,
+    source_type: str,
+    source_reference: str,
+    connection_factory: ConnectionFactory,
+) -> JobPosting:
+    with connection_factory() as connection:
+        return create_job_posting(
+            connection,
+            payload,
+            source_type=source_type,
+            source_reference=source_reference,
+        )
 
 
 def _string_or_none(value: object) -> str | None:

@@ -143,6 +143,8 @@ Tracking outcomes support both candidate-driven and process-driven endings, incl
 
 Batch ingestion currently supports newline-delimited JSON (`jsonl`) with one job posting per line. See `docs/batch_ingestion.md`.
 
+Browser-driven capture is prepared through an adapter boundary documented in `docs/browser_ingestion_adapter.md`. The evaluator stays transport-agnostic: browser capture feeds the same persisted ingestion flow used by the CLI.
+
 ## Configuration
 
 Optional environment overrides:
