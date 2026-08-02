@@ -596,6 +596,17 @@ class EvaluationModelTests(unittest.TestCase):
 
 
 class UserProfileLoaderTests(unittest.TestCase):
+    def test_missing_user_profile_has_setup_error(self) -> None:
+        from job_scout.profile_loader import load_user_profile
+
+        missing_path = Path("missing_user_profile.json")
+
+        with self.assertRaises(SystemExit) as context:
+            load_user_profile(missing_path)
+
+        self.assertIn("Job Scout currently requires a structured profile JSON", str(context.exception))
+        self.assertIn("Resume ingestion is not implemented yet", str(context.exception))
+
     def test_load_user_profile_example(self) -> None:
         from job_scout.profile_loader import load_user_profile
 

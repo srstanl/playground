@@ -27,12 +27,15 @@ The evaluator accepts one persisted `JobPosting` record plus optional user profi
 - `job_posting.source_system`
 - `job_posting.source_url`
 - `job_posting.company`
-- `user_profile.resume_summary`
 - `user_profile.skills`
 - `user_profile.target_roles`
 - `user_profile.location_preferences`
 - `user_profile.compensation_preferences`
 - `user_profile.work_mode_preferences`
+
+Note:
+- the current implementation requires a structured `UserProfile`
+- resume-file ingestion and `resume_summary` derivation are not implemented in `v1`
 
 ## Baseline Evaluation Phases
 

@@ -25,7 +25,14 @@ from job_scout.models import (
 
 def load_user_profile(path: Path) -> UserProfile:
     """Load a user profile from JSON."""
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise SystemExit(
+            "user profile not found. Job Scout currently requires a structured profile JSON at "
+            f"{path}. Copy `profiles/user_profile.example.json` to `data/profiles/user_profile.json` "
+            "or set `JOB_SCOUT_PROFILE_PATH`. Resume ingestion is not implemented yet."
+        ) from error
 
     return UserProfile(
         profile_version=payload.get("profile_version", "v1"),

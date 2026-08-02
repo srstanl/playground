@@ -181,6 +181,12 @@ Use this separation consistently:
 
 Job Scout separates repository-owned evaluation logic from user-owned career information.
 
+Current limitation:
+
+- Job Scout requires a structured profile JSON for evaluation today.
+- Job Scout does not yet ingest a resume file or auto-generate the profile from a resume.
+- Resume ingestion is planned as a separate future epic, not part of the current evaluator flow.
+
 **Local user profile**
 
 - `profiles/user_profile.example.json` - tracked template
@@ -200,6 +206,8 @@ The local profile defines your:
 - constraints
 - compensation expectations
 - evaluation preferences
+
+Without this profile, evaluation commands fail fast with a setup error. A resume document by itself is not currently used by the evaluator.
 
 **Repository-owned evaluation configuration**
 
@@ -268,6 +276,7 @@ Planned capabilities include:
 
 - email ingestion
 - browser-assisted job capture
+- resume ingestion and profile drafting
 - resume generation
 - cover letter generation
 - artifact validation
