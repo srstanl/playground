@@ -7,25 +7,25 @@ from contextlib import contextmanager
 from datetime import datetime
 import json
 from pathlib import Path
-import sqlite3
 import sys
 from textwrap import shorten
 from typing import cast
 
-from job_scout.config import get_settings
-from job_scout.db import (
-    connect,
-    create_application_record,
-    create_job_posting,
-    get_application_record,
-    get_job_posting,
-    initialize_database,
-    list_application_records,
-    list_job_postings,
-    update_application_record,
+from job_scout.application.evaluate import evaluate_job
+from job_scout.application.ingest import IngestBatchResult, fetch_job, fetch_jobs, ingest_batch, ingest_job_description
+from job_scout.application.track import (
+    TRACK_DECISIONS,
+    TRACK_OUTCOMES,
+    TRACK_STATUSES,
+    fetch_tracking_record,
+    fetch_tracking_records,
+    initialize_tracking,
+    update_tracking,
 )
-from job_scout.evaluator import evaluate_job_posting, evaluation_to_pretty_json
-from job_scout.models import ApplicationRecord, ApplicationRecordCreate, JobPostingInput
+from job_scout.config import get_settings
+from job_scout.db import connect, initialize_database
+from job_scout.evaluator import evaluation_to_pretty_json
+from job_scout.models import ApplicationRecord
 
 
 class CommandArgs(argparse.Namespace):
@@ -83,58 +83,6 @@ class TrackUpdateArgs(CommandArgs):
 class TrackListArgs(CommandArgs):
     status: str | None
     decision: str | None
-
-
-TRACK_DECISIONS = {
-    "unreviewed",
-    "saved",
-    "skip",
-    "apply",
-}
-
-TRACK_STATUSES = {
-    "not_started",
-    "application_ready",
-    "applied",
-    "recruiter_contact",
-    "interviewing",
-    "final_round",
-    "offer",
-    "rejected",
-    "withdrawn",
-    "closed",
-}
-
-TRACK_OUTCOMES = {
-    "unknown",
-    "no_response",
-    "rejected",
-    "withdrawn",
-    "offer_declined",
-    "offer_accepted",
-    "position_closed",
-    "hiring_paused",
-}
-
-TERMINAL_OUTCOMES = {
-    "rejected",
-    "withdrawn",
-    "offer_declined",
-    "offer_accepted",
-    "position_closed",
-    "hiring_paused",
-}
-
-BATCH_ALLOWED_FIELDS = {
-    "source_system",
-    "source_url",
-    "external_id",
-    "external_ids",
-    "company",
-    "title",
-    "location",
-    "raw_description",
-}
 
 
 def _database_path() -> Path:
@@ -222,93 +170,27 @@ def run(argv: list[str] | None = None) -> int:
 
     if args.command == "ingest":
         ingest_args = cast(IngestArgs, args)
-        if not ingest_args.file.exists() or not ingest_args.file.is_file():
-            raise SystemExit(f"job description file not found: {ingest_args.file}")
-        raw_description = ingest_args.file.read_text(encoding="utf-8").strip()
-        if not raw_description:
-            raise SystemExit("job description file is empty")
-
-        payload = JobPostingInput(
+        job = ingest_job_description(
+            file_path=ingest_args.file,
             source_system=ingest_args.source_system,
-            raw_description=raw_description,
             source_url=ingest_args.source_url,
             company=ingest_args.company,
             title=ingest_args.title,
             location=ingest_args.location,
-            external_ids=_external_ids_from_inputs(ingest_args.source_system, ingest_args.external_id),
+            external_id=ingest_args.external_id,
+            connection_factory=_connection,
         )
-        with _connection() as connection:
-            job = create_job_posting(
-                connection,
-                payload,
-                source_type="uploaded_file",
-                source_reference=str(ingest_args.file),
-            )
         print(f"Ingested job {job.id}: {job.title or 'untitled'}")
         return 0
 
     if args.command == "ingest-batch":
         batch_args = cast(IngestBatchArgs, args)
-        if not batch_args.jsonl.exists() or not batch_args.jsonl.is_file():
-            raise SystemExit(f"batch file not found: {batch_args.jsonl}")
-        processed = 0
-        ingested = 0
-        failed = 0
-        warnings = 0
-        with _connection() as connection:
-            for line_number, raw_line in enumerate(batch_args.jsonl.read_text(encoding="utf-8").splitlines(), start=1):
-                stripped = raw_line.strip()
-                if not stripped:
-                    continue
-                processed += 1
-                try:
-                    record = json.loads(stripped)
-                except json.JSONDecodeError as error:
-                    failed += 1
-                    print(f"line {line_number}: error: invalid json ({error.msg})")
-                    continue
-                if not isinstance(record, dict):
-                    failed += 1
-                    print(f"line {line_number}: error: batch record must be a JSON object")
-                    continue
-                unknown_fields = sorted(set(record) - BATCH_ALLOWED_FIELDS)
-                if unknown_fields:
-                    warnings += 1
-                    print(f"line {line_number}: warning: ignoring unknown fields: {', '.join(unknown_fields)}")
-                source_system = _string_or_none(record.get("source_system"))
-                if source_system is None:
-                    failed += 1
-                    print(f"line {line_number}: error: source_system is required")
-                    continue
-                raw_description = str(record.get("raw_description", "")).strip()
-                if not raw_description:
-                    failed += 1
-                    print(f"line {line_number}: error: raw_description is required")
-                    continue
-                payload = JobPostingInput(
-                    source_system=source_system,
-                    raw_description=raw_description,
-                    source_url=_string_or_none(record.get("source_url")),
-                    company=_string_or_none(record.get("company")),
-                    title=_string_or_none(record.get("title")),
-                    location=_string_or_none(record.get("location")),
-                    external_ids=_external_ids_from_batch_record(record, source_system),
-                )
-                job = create_job_posting(
-                    connection,
-                    payload,
-                    source_type="batch_jsonl",
-                    source_reference=f"{batch_args.jsonl}:{line_number}",
-                )
-                ingested += 1
-                print(f"line {line_number}: ingested job {job.id}: {job.title or 'untitled'}")
-        print(f"summary: processed={processed} ingested={ingested} failed={failed} warnings={warnings}")
+        result = ingest_batch(jsonl_path=batch_args.jsonl, connection_factory=_connection)
+        _print_batch_ingest_result(result)
         return 0
 
     if args.command == "list":
-        with _connection() as connection:
-            jobs = list_job_postings(connection)
-
+        jobs = fetch_jobs(connection_factory=_connection)
         if not jobs:
             print("No jobs ingested yet.")
             return 0
@@ -325,12 +207,10 @@ def run(argv: list[str] | None = None) -> int:
 
     if args.command == "show":
         show_args = cast(ShowArgs, args)
-        with _connection() as connection:
-            try:
-                job = get_job_posting(connection, show_args.job_id)
-            except LookupError as error:
-                raise SystemExit(str(error)) from error
-
+        try:
+            job = fetch_job(job_id=show_args.job_id, connection_factory=_connection)
+        except LookupError as error:
+            raise SystemExit(str(error)) from error
         print(f"id: {job.id}")
         print(f"title: {job.title or ''}")
         print(f"company: {job.company or ''}")
@@ -348,13 +228,10 @@ def run(argv: list[str] | None = None) -> int:
 
     if args.command == "evaluate":
         evaluate_args = cast(EvaluateArgs, args)
-        with _connection() as connection:
-            try:
-                job = get_job_posting(connection, evaluate_args.job_id)
-            except LookupError as error:
-                raise SystemExit(str(error)) from error
-
-        evaluation = evaluate_job_posting(job)
+        try:
+            evaluation = evaluate_job(job_id=evaluate_args.job_id, connection_factory=_connection)
+        except LookupError as error:
+            raise SystemExit(str(error)) from error
 
         if evaluate_args.as_json:
             print(evaluation_to_pretty_json(evaluation))
@@ -417,43 +294,27 @@ def run(argv: list[str] | None = None) -> int:
         track_command = getattr(args, "track_command", None)
         if track_command == "init":
             track_args = cast(TrackInitArgs, args)
-            _validate_tracking_fields(
-                decision=track_args.decision,
-                status=track_args.status,
-                outcome=track_args.outcome,
-                next_follow_up_at=_parse_datetime(track_args.next_follow_up_at),
-            )
-            with _connection() as connection:
-                try:
-                    get_job_posting(connection, track_args.job_id)
-                except LookupError as error:
-                    raise SystemExit(str(error)) from error
-                try:
-                    record = create_application_record(
-                        connection,
-                        ApplicationRecordCreate(
-                            job_posting_id=track_args.job_id,
-                            decision=track_args.decision,
-                            status=track_args.status,
-                            outcome=track_args.outcome,
-                            next_follow_up_at=_parse_datetime(track_args.next_follow_up_at),
-                            notes=track_args.notes,
-                        ),
-                    )
-                except sqlite3.IntegrityError as error:
-                    raise SystemExit(
-                        f"tracking record for job {track_args.job_id} already exists; use `track update` instead"
-                    ) from error
+            try:
+                record = initialize_tracking(
+                    job_id=track_args.job_id,
+                    decision=track_args.decision,
+                    status=track_args.status,
+                    outcome=track_args.outcome,
+                    next_follow_up_at=_parse_datetime(track_args.next_follow_up_at),
+                    notes=track_args.notes,
+                    connection_factory=_connection,
+                )
+            except LookupError as error:
+                raise SystemExit(str(error)) from error
             print(f"Tracking initialized for job {record.job_posting_id} with status {record.status}.")
             return 0
 
         if track_command == "show":
             track_args = cast(TrackShowArgs, args)
-            with _connection() as connection:
-                try:
-                    record = get_application_record(connection, track_args.job_id)
-                except LookupError as error:
-                    raise SystemExit(str(error)) from error
+            try:
+                record = fetch_tracking_record(job_id=track_args.job_id, connection_factory=_connection)
+            except LookupError as error:
+                raise SystemExit(str(error)) from error
             _print_tracking_record(record)
             return 0
 
@@ -462,49 +323,31 @@ def run(argv: list[str] | None = None) -> int:
             parsed_applied_at = _parse_datetime(track_args.applied_at)
             parsed_last_event_at = _parse_datetime(track_args.last_event_at)
             parsed_next_follow_up_at = _parse_datetime(track_args.next_follow_up_at)
-            with _connection() as connection:
-                try:
-                    existing = get_application_record(connection, track_args.job_id)
-                    decision = track_args.decision if track_args.decision is not None else existing.decision
-                    status = track_args.status if track_args.status is not None else existing.status
-                    outcome = track_args.outcome if track_args.outcome is not None else existing.outcome
-                    next_follow_up_at = (
-                        parsed_next_follow_up_at
-                        if track_args.next_follow_up_at is not None
-                        else existing.next_follow_up_at
-                    )
-                    normalized_next_follow_up_at = _normalized_follow_up_for_outcome(next_follow_up_at, outcome)
-                    _validate_tracking_fields(
-                        decision=decision,
-                        status=status,
-                        outcome=outcome,
-                        next_follow_up_at=normalized_next_follow_up_at,
-                    )
-                    record = update_application_record(
-                        connection,
-                        track_args.job_id,
-                        decision=decision,
-                        status=_terminal_status_for_outcome(status, outcome),
-                        outcome=outcome,
-                        applied_at=parsed_applied_at,
-                        last_event_at=parsed_last_event_at,
-                        next_follow_up_at=normalized_next_follow_up_at,
-                        resume_variant=track_args.resume_variant,
-                        notes=track_args.notes,
-                    )
-                except LookupError as error:
-                    raise SystemExit(str(error)) from error
+            try:
+                record = update_tracking(
+                    job_id=track_args.job_id,
+                    decision=track_args.decision,
+                    status=track_args.status,
+                    outcome=track_args.outcome,
+                    applied_at=parsed_applied_at,
+                    last_event_at=parsed_last_event_at,
+                    next_follow_up_at=parsed_next_follow_up_at if track_args.next_follow_up_at is not None else None,
+                    resume_variant=track_args.resume_variant,
+                    notes=track_args.notes,
+                    connection_factory=_connection,
+                )
+            except LookupError as error:
+                raise SystemExit(str(error)) from error
             print(f"Tracking updated for job {record.job_posting_id}.")
             return 0
 
         if track_command == "list":
             track_args = cast(TrackListArgs, args)
-            if track_args.status is not None and track_args.status not in TRACK_STATUSES:
-                raise SystemExit(f"invalid tracking status: {track_args.status}")
-            if track_args.decision is not None and track_args.decision not in TRACK_DECISIONS:
-                raise SystemExit(f"invalid tracking decision: {track_args.decision}")
-            with _connection() as connection:
-                records = list_application_records(connection, status=track_args.status, decision=track_args.decision)
+            records = fetch_tracking_records(
+                status=track_args.status,
+                decision=track_args.decision,
+                connection_factory=_connection,
+            )
             if not records:
                 print("No tracked jobs yet.")
                 return 0
@@ -539,61 +382,16 @@ def _print_tracking_record(record: ApplicationRecord) -> None:
     print(f"created_at: {record.created_at.isoformat()}")
     print(f"updated_at: {record.updated_at.isoformat()}")
 
-
-def _string_or_none(value: object) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None
-
-
-def _external_ids_from_inputs(source_system: str, external_id: str | None) -> dict[str, str]:
-    normalized_external_id = _string_or_none(external_id)
-    if normalized_external_id is None:
-        return {}
-    return {source_system: normalized_external_id}
-
-
-def _external_ids_from_batch_record(record: dict[str, object], source_system: str) -> dict[str, str]:
-    external_ids_value = record.get("external_ids")
-    if external_ids_value is not None:
-        if not isinstance(external_ids_value, dict):
-            raise SystemExit("external_ids must be a JSON object when provided")
-        return {
-            str(key).strip(): str(value).strip()
-            for key, value in external_ids_value.items()
-            if str(key).strip() and str(value).strip()
-        }
-    return _external_ids_from_inputs(source_system, _string_or_none(record.get("external_id")))
-
-
-def _validate_tracking_fields(
-    *,
-    decision: str,
-    status: str,
-    outcome: str,
-    next_follow_up_at: datetime | None,
-) -> None:
-    if decision not in TRACK_DECISIONS:
-        raise SystemExit(f"invalid tracking decision: {decision}")
-    if status not in TRACK_STATUSES:
-        raise SystemExit(f"invalid tracking status: {status}")
-    if outcome not in TRACK_OUTCOMES:
-        raise SystemExit(f"invalid tracking outcome: {outcome}")
-    if decision == "skip" and status not in {"not_started", "closed"}:
-        raise SystemExit("decision `skip` cannot be combined with an active lifecycle status")
-    if decision == "apply" and status == "not_started":
-        raise SystemExit("decision `apply` requires a tracking status beyond `not_started`")
-    if outcome in TERMINAL_OUTCOMES and next_follow_up_at is not None:
-        raise SystemExit("terminal outcomes cannot keep an active follow-up date")
-
-
-def _terminal_status_for_outcome(status: str, outcome: str) -> str:
-    return "closed" if outcome in TERMINAL_OUTCOMES else status
-
-
-def _normalized_follow_up_for_outcome(next_follow_up_at: datetime | None, outcome: str) -> datetime | None:
-    return None if outcome in TERMINAL_OUTCOMES else next_follow_up_at
+def _print_batch_ingest_result(result: IngestBatchResult) -> None:
+    for message in result.messages:
+        print(message)
+    print(
+        "summary: "
+        f"processed={result.processed} "
+        f"ingested={result.ingested} "
+        f"failed={result.failed} "
+        f"warnings={result.warnings}"
+    )
 
 
 def main() -> None:

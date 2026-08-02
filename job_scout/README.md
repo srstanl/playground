@@ -143,6 +143,8 @@ Tracking outcomes support both candidate-driven and process-driven endings, incl
 
 Batch ingestion currently supports newline-delimited JSON (`jsonl`) with one job posting per line. See `docs/batch_ingestion.md`.
 
+Browser-driven capture is prepared through an adapter boundary documented in `docs/browser_ingestion_adapter.md`. The evaluator stays transport-agnostic: browser capture feeds the same persisted ingestion flow used by the CLI.
+
 ## Configuration
 
 Optional environment overrides:
@@ -150,9 +152,9 @@ Optional environment overrides:
 ```bash
 export JOB_SCOUT_DATA_DIR=./data
 export JOB_SCOUT_DATABASE_PATH=./data/db/job_scout.db
-export JOB_SCOUT_PROFILE_PATH=./profiles/user_profile.json
-export JOB_SCOUT_EVALUATION_MODEL_PATH=./profiles/evaluation_model.json
-export JOB_SCOUT_CAPABILITY_MODEL_PATH=./profiles/capability_model.json
+export JOB_SCOUT_PROFILE_PATH=./data/profiles/user_profile.json
+export JOB_SCOUT_EVALUATION_MODEL_PATH=./config/evaluation_model.json
+export JOB_SCOUT_CAPABILITY_MODEL_PATH=./config/capability_model.json
 ```
 
 Recommended local runtime layout:
@@ -168,8 +170,9 @@ data/
 
 Use this separation consistently:
 
-- `profiles/` for tracked templates and repository-owned evaluation models
-- `profiles/user_profile.json` for your real local profile
+- `config/` for tracked repository-owned evaluation models
+- `profiles/` for tracked profile templates only
+- `data/profiles/user_profile.json` for your real local profile
 - `data/inputs/jd/` for local job-description inputs
 - `data/reports/` for generated local evaluation reports
 - `data/db/` for the local SQLite database
@@ -178,15 +181,22 @@ Use this separation consistently:
 
 Job Scout separates repository-owned evaluation logic from user-owned career information.
 
+Current limitation:
+
+- Job Scout requires a structured profile JSON for evaluation today.
+- Job Scout does not yet ingest a resume file or auto-generate the profile from a resume.
+- Resume ingestion is planned as a separate future epic, not part of the current evaluator flow.
+
 **Local user profile**
 
 - `profiles/user_profile.example.json` - tracked template
-- `profiles/user_profile.json` - ignored local profile with real values
+- `data/profiles/user_profile.json` - ignored local profile with real values
 
 Create your local profile:
 
 ```bash
-cp profiles/user_profile.example.json profiles/user_profile.json
+mkdir -p data/profiles
+cp profiles/user_profile.example.json data/profiles/user_profile.json
 ```
 
 The local profile defines your:
@@ -197,10 +207,12 @@ The local profile defines your:
 - compensation expectations
 - evaluation preferences
 
+Without this profile, evaluation commands fail fast with a setup error. A resume document by itself is not currently used by the evaluator.
+
 **Repository-owned evaluation configuration**
 
-- `profiles/evaluation_model.json` - scoring model, thresholds, and evaluation behavior
-- `profiles/capability_model.json` - capability ontology used to reason above tool names
+- `config/evaluation_model.json` - scoring model, thresholds, and evaluation behavior
+- `config/capability_model.json` - capability ontology used to reason above tool names
 
 The profile answers:
 
@@ -252,7 +264,8 @@ See `CONTRIBUTING.md` for working conventions.
 - `job_scout/models.py` - domain models
 - `docs/batch_ingestion.md` - batch import contract for multi-job ingestion
 - `docs/tracking_mvp.md` - tracking scope, lifecycle, and v1 design
-- `profiles/` - tracked evaluation configuration plus local profile template
+- `config/` - tracked evaluation configuration
+- `profiles/` - tracked local profile template
 - `docs/feedback/` - saved review artifacts and iteration context
 - `CONTRIBUTING.md` - contribution guidelines
 - `tests/` - project tests
@@ -263,6 +276,7 @@ Planned capabilities include:
 
 - email ingestion
 - browser-assisted job capture
+- resume ingestion and profile drafting
 - resume generation
 - cover letter generation
 - artifact validation

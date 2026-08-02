@@ -5,12 +5,15 @@ import os
 from pathlib import Path
 import unittest
 
+from job_scout.adapters.browser import BrowserTabJobCapture
 from job_scout import cli
 from job_scout.evaluation_model_loader import load_evaluation_model
 from job_scout.models import JobPosting, TargetingPreferences, UserProfile
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1]
+CONFIG_ROOT = FIXTURE_ROOT / "config"
+PROFILE_ROOT = FIXTURE_ROOT / "profiles"
 
 
 class JobScoutCliTests(unittest.TestCase):
@@ -163,9 +166,9 @@ class JobScoutCliTests(unittest.TestCase):
         original_evaluation_model_path = os.environ.get("JOB_SCOUT_EVALUATION_MODEL_PATH")
         original_capability_model_path = os.environ.get("JOB_SCOUT_CAPABILITY_MODEL_PATH")
         cli._database_path = lambda: database_path
-        os.environ["JOB_SCOUT_PROFILE_PATH"] = str(FIXTURE_ROOT / "profiles" / "user_profile.example.json")
-        os.environ["JOB_SCOUT_EVALUATION_MODEL_PATH"] = str(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
-        os.environ["JOB_SCOUT_CAPABILITY_MODEL_PATH"] = str(FIXTURE_ROOT / "profiles" / "capability_model.json")
+        os.environ["JOB_SCOUT_PROFILE_PATH"] = str(PROFILE_ROOT / "user_profile.example.json")
+        os.environ["JOB_SCOUT_EVALUATION_MODEL_PATH"] = str(CONFIG_ROOT / "evaluation_model.json")
+        os.environ["JOB_SCOUT_CAPABILITY_MODEL_PATH"] = str(CONFIG_ROOT / "capability_model.json")
         evaluator.get_default_user_profile.cache_clear()
         evaluator.get_default_evaluation_model.cache_clear()
         evaluator.get_default_capability_model.cache_clear()
@@ -229,6 +232,61 @@ class JobScoutCliTests(unittest.TestCase):
         self.assertIn('"job_posting_id": 1', json_output.getvalue())
         self.assertIn('"semantic_shapes"', json_output.getvalue())
         self.assertIn('"engineering_persona"', json_output.getvalue())
+
+    def test_ingest_browser_tab_capture(self) -> None:
+        from job_scout.application.ingest import fetch_job, ingest_browser_tab_capture
+        from job_scout.db import connect, initialize_database
+
+        temp_dir = Path(self.id().replace(".", "_"))
+        temp_dir.mkdir(exist_ok=True)
+        database_path = temp_dir / "job_scout.db"
+
+        def connection_factory():
+            connection = connect(database_path)
+            initialize_database(connection)
+
+            class _ConnectionContext:
+                def __enter__(self_nonlocal):
+                    return connection
+
+                def __exit__(self_nonlocal, exc_type, exc, tb):
+                    connection.close()
+                    return False
+
+            return _ConnectionContext()
+
+        capture = BrowserTabJobCapture(
+            source_system="linkedin",
+            page_url="https://example.com/jobs/platform-engineer",
+            raw_description="Platform engineer role building delivery systems and internal tooling.",
+            captured_at=datetime(2026, 8, 2, 12, 0, tzinfo=UTC),
+            page_title="Platform Engineer - Example Co",
+            company="Example Co",
+            title="Platform Engineer",
+            location="Remote",
+            external_ids={"linkedin": "li-123"},
+            browser_name="chrome",
+            window_id="window-1",
+            tab_id="tab-7",
+        )
+        try:
+            job = ingest_browser_tab_capture(
+                capture=capture,
+                connection_factory=connection_factory,
+            )
+            fetched = fetch_job(job_id=job.id, connection_factory=connection_factory)
+        finally:
+            if database_path.exists():
+                database_path.unlink()
+            temp_dir.rmdir()
+
+        self.assertEqual(job.source_type, "browser_tab")
+        self.assertEqual(job.source_system, "linkedin")
+        self.assertEqual(job.source_url, "https://example.com/jobs/platform-engineer")
+        self.assertEqual(job.external_ids, {"linkedin": "li-123"})
+        self.assertEqual(fetched.company, "Example Co")
+        self.assertIn("captured_at=2026-08-02T12:00:00+00:00", fetched.source_reference or "")
+        self.assertIn("browser=chrome", fetched.source_reference or "")
 
     def test_track_init_show_update_and_list(self) -> None:
         temp_dir = Path(self.id().replace(".", "_"))
@@ -417,7 +475,7 @@ class EngineeringPersonaEvaluationTests(unittest.TestCase):
     def test_preferred_persona_scores_high(self) -> None:
         from job_scout.evaluator import evaluate_job_posting
 
-        evaluation_model = load_evaluation_model(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        evaluation_model = load_evaluation_model(CONFIG_ROOT / "evaluation_model.json")
         profile = UserProfile(
             targeting=TargetingPreferences(
                 preferred_personas=["platform_delivery"],
@@ -451,7 +509,7 @@ class EngineeringPersonaEvaluationTests(unittest.TestCase):
     def test_avoided_persona_scores_low(self) -> None:
         from job_scout.evaluator import evaluate_job_posting
 
-        evaluation_model = load_evaluation_model(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        evaluation_model = load_evaluation_model(CONFIG_ROOT / "evaluation_model.json")
         profile = UserProfile(
             targeting=TargetingPreferences(
                 preferred_personas=["platform_delivery"],
@@ -538,6 +596,17 @@ class EvaluationModelTests(unittest.TestCase):
 
 
 class UserProfileLoaderTests(unittest.TestCase):
+    def test_missing_user_profile_has_setup_error(self) -> None:
+        from job_scout.profile_loader import load_user_profile
+
+        missing_path = Path("missing_user_profile.json")
+
+        with self.assertRaises(SystemExit) as context:
+            load_user_profile(missing_path)
+
+        self.assertIn("Job Scout currently requires a structured profile JSON", str(context.exception))
+        self.assertIn("Resume ingestion is not implemented yet", str(context.exception))
+
     def test_load_user_profile_example(self) -> None:
         from job_scout.profile_loader import load_user_profile
 
@@ -558,7 +627,7 @@ class CapabilityModelLoaderTests(unittest.TestCase):
     def test_load_capability_model(self) -> None:
         from job_scout.capability_model_loader import load_capability_model
 
-        model = load_capability_model(FIXTURE_ROOT / "profiles" / "capability_model.json")
+        model = load_capability_model(CONFIG_ROOT / "capability_model.json")
 
         self.assertEqual(model.model_version, "v1")
         capability_names = [capability.name for capability in model.capabilities]

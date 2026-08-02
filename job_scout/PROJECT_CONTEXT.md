@@ -42,6 +42,7 @@ Build a local-first job application intelligence assistant that helps ingest job
 - Determine when tracking data is stable enough to support analytics queries.
 - Decide whether a human-oriented multi-job delimiter format is worth adding beyond `jsonl`.
 - Keep preferred qualification handling as-is for now; a later refinement may distinguish role-defining preferred signals from contextual preferred advantages.
+- Keep resume ingestion out of the active delivery lane for now; treat it as a later intake epic that can draft structured profile data without changing current evaluation assumptions.
 
 ## Naming Convention
 - Python package name: `job_scout`
@@ -56,4 +57,5 @@ Build a local-first job application intelligence assistant that helps ingest job
   - `data/db/` for the SQLite database
   - `data/inputs/jd/` for job-description inputs
   - `data/reports/` for generated evaluation reports
-- Real user profile data should live in ignored `profiles/user_profile.json`; only the example profile stays tracked
+  - `data/profiles/` for the real local user profile
+- Tracked repository-owned evaluation models should live under `config/`; only the example profile stays tracked under `profiles/`
