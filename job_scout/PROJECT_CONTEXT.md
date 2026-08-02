@@ -56,4 +56,5 @@ Build a local-first job application intelligence assistant that helps ingest job
   - `data/db/` for the SQLite database
   - `data/inputs/jd/` for job-description inputs
   - `data/reports/` for generated evaluation reports
-- Real user profile data should live in ignored `profiles/user_profile.json`; only the example profile stays tracked
+  - `data/profiles/` for the real local user profile
+- Tracked repository-owned evaluation models should live under `config/`; only the example profile stays tracked under `profiles/`

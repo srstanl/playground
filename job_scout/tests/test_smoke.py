@@ -11,6 +11,8 @@ from job_scout.models import JobPosting, TargetingPreferences, UserProfile
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1]
+CONFIG_ROOT = FIXTURE_ROOT / "config"
+PROFILE_ROOT = FIXTURE_ROOT / "profiles"
 
 
 class JobScoutCliTests(unittest.TestCase):
@@ -163,9 +165,9 @@ class JobScoutCliTests(unittest.TestCase):
         original_evaluation_model_path = os.environ.get("JOB_SCOUT_EVALUATION_MODEL_PATH")
         original_capability_model_path = os.environ.get("JOB_SCOUT_CAPABILITY_MODEL_PATH")
         cli._database_path = lambda: database_path
-        os.environ["JOB_SCOUT_PROFILE_PATH"] = str(FIXTURE_ROOT / "profiles" / "user_profile.example.json")
-        os.environ["JOB_SCOUT_EVALUATION_MODEL_PATH"] = str(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
-        os.environ["JOB_SCOUT_CAPABILITY_MODEL_PATH"] = str(FIXTURE_ROOT / "profiles" / "capability_model.json")
+        os.environ["JOB_SCOUT_PROFILE_PATH"] = str(PROFILE_ROOT / "user_profile.example.json")
+        os.environ["JOB_SCOUT_EVALUATION_MODEL_PATH"] = str(CONFIG_ROOT / "evaluation_model.json")
+        os.environ["JOB_SCOUT_CAPABILITY_MODEL_PATH"] = str(CONFIG_ROOT / "capability_model.json")
         evaluator.get_default_user_profile.cache_clear()
         evaluator.get_default_evaluation_model.cache_clear()
         evaluator.get_default_capability_model.cache_clear()
@@ -417,7 +419,7 @@ class EngineeringPersonaEvaluationTests(unittest.TestCase):
     def test_preferred_persona_scores_high(self) -> None:
         from job_scout.evaluator import evaluate_job_posting
 
-        evaluation_model = load_evaluation_model(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        evaluation_model = load_evaluation_model(CONFIG_ROOT / "evaluation_model.json")
         profile = UserProfile(
             targeting=TargetingPreferences(
                 preferred_personas=["platform_delivery"],
@@ -451,7 +453,7 @@ class EngineeringPersonaEvaluationTests(unittest.TestCase):
     def test_avoided_persona_scores_low(self) -> None:
         from job_scout.evaluator import evaluate_job_posting
 
-        evaluation_model = load_evaluation_model(FIXTURE_ROOT / "profiles" / "evaluation_model.json")
+        evaluation_model = load_evaluation_model(CONFIG_ROOT / "evaluation_model.json")
         profile = UserProfile(
             targeting=TargetingPreferences(
                 preferred_personas=["platform_delivery"],
@@ -558,7 +560,7 @@ class CapabilityModelLoaderTests(unittest.TestCase):
     def test_load_capability_model(self) -> None:
         from job_scout.capability_model_loader import load_capability_model
 
-        model = load_capability_model(FIXTURE_ROOT / "profiles" / "capability_model.json")
+        model = load_capability_model(CONFIG_ROOT / "capability_model.json")
 
         self.assertEqual(model.model_version, "v1")
         capability_names = [capability.name for capability in model.capabilities]

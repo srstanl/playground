@@ -11,26 +11,26 @@ class Settings:
 
     app_name: str = "job-scout"
     data_dir: Path = Path("data")
-    database_path: Path = Path("data/job_scout.db")
-    profile_path: Path = Path("profiles/user_profile.local.json")
-    evaluation_model_path: Path = Path("profiles/evaluation_model.json")
-    capability_model_path: Path = Path("profiles/capability_model.json")
+    database_path: Path = Path("data/db/job_scout.db")
+    profile_path: Path = Path("data/profiles/user_profile.json")
+    evaluation_model_path: Path = Path("config/evaluation_model.json")
+    capability_model_path: Path = Path("config/capability_model.json")
 
 
 def get_settings() -> Settings:
     """Return default local settings."""
     data_dir = Path(os.getenv("JOB_SCOUT_DATA_DIR", "data"))
     database_path = Path(
-        os.getenv("JOB_SCOUT_DATABASE_PATH", str(data_dir / "job_scout.db"))
+        os.getenv("JOB_SCOUT_DATABASE_PATH", str(data_dir / "db" / "job_scout.db"))
     )
     profile_path = Path(
-        os.getenv("JOB_SCOUT_PROFILE_PATH", "profiles/user_profile.local.json")
+        os.getenv("JOB_SCOUT_PROFILE_PATH", str(data_dir / "profiles" / "user_profile.json"))
     )
     evaluation_model_path = Path(
-        os.getenv("JOB_SCOUT_EVALUATION_MODEL_PATH", "profiles/evaluation_model.json")
+        os.getenv("JOB_SCOUT_EVALUATION_MODEL_PATH", "config/evaluation_model.json")
     )
     capability_model_path = Path(
-        os.getenv("JOB_SCOUT_CAPABILITY_MODEL_PATH", "profiles/capability_model.json")
+        os.getenv("JOB_SCOUT_CAPABILITY_MODEL_PATH", "config/capability_model.json")
     )
     return Settings(
         data_dir=data_dir,
