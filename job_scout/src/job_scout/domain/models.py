@@ -70,6 +70,26 @@ class ApplicationRecord:
 
 
 @dataclass
+class ApplicationEvent:
+    """Durable event emitted when a tracking record changes."""
+
+    id: int
+    application_record_id: int
+    job_posting_id: int
+    event_type: str
+    event_at: datetime
+    changed_fields: list[str] = field(default_factory=list)
+    decision: str = ""
+    status: str = ""
+    outcome: str = ""
+    applied_at: Optional[datetime] = None
+    last_event_at: Optional[datetime] = None
+    next_follow_up_at: Optional[datetime] = None
+    resume_variant: str = ""
+    notes: str = ""
+
+
+@dataclass
 class CompensationRange:
     """Structured compensation information extracted from a posting."""
 

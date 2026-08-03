@@ -17,15 +17,16 @@ from job_scout.application.track import (
     TRACK_DECISIONS,
     TRACK_OUTCOMES,
     TRACK_STATUSES,
+    fetch_tracking_history,
     fetch_tracking_record,
     fetch_tracking_records,
     initialize_tracking,
     update_tracking,
 )
 from job_scout.config import get_settings
-from job_scout.db import connect, initialize_database
+from job_scout.domain.models import ApplicationEvent, ApplicationRecord
 from job_scout.evaluator import evaluation_to_pretty_json
-from job_scout.models import ApplicationRecord
+from job_scout.persistence.sqlite import connect, initialize_database
 
 
 class CommandArgs(argparse.Namespace):
@@ -65,6 +66,10 @@ class TrackInitArgs(CommandArgs):
 
 
 class TrackShowArgs(CommandArgs):
+    job_id: int
+
+
+class TrackHistoryArgs(CommandArgs):
     job_id: int
 
 
@@ -142,6 +147,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     track_show = track_subparsers.add_parser("show", help="Show one tracking record.")
     track_show.add_argument("job_id", type=int)
+
+    track_history = track_subparsers.add_parser("history", help="Show tracking event history.")
+    track_history.add_argument("job_id", type=int)
 
     track_update = track_subparsers.add_parser("update", help="Update one tracking record.")
     track_update.add_argument("job_id", type=int)
@@ -318,6 +326,15 @@ def run(argv: list[str] | None = None) -> int:
             _print_tracking_record(record)
             return 0
 
+        if track_command == "history":
+            track_args = cast(TrackHistoryArgs, args)
+            try:
+                events = fetch_tracking_history(job_id=track_args.job_id, connection_factory=_connection)
+            except LookupError as error:
+                raise SystemExit(str(error)) from error
+            _print_tracking_history(events)
+            return 0
+
         if track_command == "update":
             track_args = cast(TrackUpdateArgs, args)
             parsed_applied_at = _parse_datetime(track_args.applied_at)
@@ -381,6 +398,21 @@ def _print_tracking_record(record: ApplicationRecord) -> None:
     print(f"notes: {record.notes}")
     print(f"created_at: {record.created_at.isoformat()}")
     print(f"updated_at: {record.updated_at.isoformat()}")
+
+
+def _print_tracking_history(events: list[ApplicationEvent]) -> None:
+    if not events:
+        print("No tracking history yet.")
+        return
+    for event in events:
+        print(
+            f"[{event.event_at.isoformat()}] {event.event_type} "
+            f"changed={','.join(event.changed_fields) or 'none'}"
+        )
+        print(
+            f"  decision={event.decision} status={event.status} "
+            f"outcome={event.outcome} follow_up={_format_datetime(event.next_follow_up_at)}"
+        )
 
 def _print_batch_ingest_result(result: IngestBatchResult) -> None:
     for message in result.messages:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from job_scout.models import JobPostingInput
+from job_scout.domain.models import JobPostingInput
 
 
 @dataclass(frozen=True)

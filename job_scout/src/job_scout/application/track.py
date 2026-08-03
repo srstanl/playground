@@ -6,14 +6,15 @@ from datetime import datetime
 import sqlite3
 from typing import Callable, ContextManager
 
-from job_scout.db import (
+from job_scout.domain.models import ApplicationEvent, ApplicationRecord, ApplicationRecordCreate
+from job_scout.persistence.sqlite import (
     create_application_record,
     get_application_record,
     get_job_posting,
+    list_application_events,
     list_application_records,
     update_application_record,
 )
-from job_scout.models import ApplicationRecord, ApplicationRecordCreate
 
 
 ConnectionFactory = Callable[[], ContextManager]
@@ -161,6 +162,17 @@ def fetch_tracking_records(
         raise SystemExit(f"invalid tracking decision: {decision}")
     with connection_factory() as connection:
         return list_application_records(connection, status=status, decision=decision)
+
+
+def fetch_tracking_history(
+    *,
+    job_id: int,
+    connection_factory: ConnectionFactory,
+) -> list[ApplicationEvent]:
+    """Return the durable tracking event history for one job."""
+    with connection_factory() as connection:
+        get_application_record(connection, job_id)
+        return list_application_events(connection, job_posting_id=job_id)
 
 
 def _validate_tracking_fields(
