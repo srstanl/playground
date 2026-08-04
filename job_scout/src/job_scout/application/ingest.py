@@ -8,8 +8,12 @@ from pathlib import Path
 from typing import Callable, ContextManager
 
 from job_scout.adapters.browser import BrowserTabJobCapture
-from job_scout.db import create_job_posting, get_job_posting, list_job_postings
-from job_scout.models import JobPosting, JobPostingInput
+from job_scout.domain.models import JobPosting, JobPostingInput
+from job_scout.persistence.sqlite import (
+    create_job_posting,
+    get_job_posting,
+    list_job_postings,
+)
 
 
 ConnectionFactory = Callable[[], ContextManager]

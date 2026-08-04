@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from job_scout.models import (
+from job_scout.domain.models import (
     ArtifactPreferences,
     CandidateConstraints,
     CompensationPreferences,

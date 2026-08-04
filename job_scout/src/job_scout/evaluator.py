@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 from functools import lru_cache
 import json
 
-from job_scout.capability_model_loader import load_capability_model
 from job_scout.config import get_settings
+from job_scout.config.capability_model_loader import load_capability_model
 from job_scout.evaluation.extractor import extract_job_posting
 from job_scout.evaluation.recommender import (
     build_narrative,
@@ -18,8 +18,9 @@ from job_scout.evaluation.recommender import (
     recommendation_for,
 )
 from job_scout.evaluation.scorer import score_extraction
-from job_scout.evaluation_model_loader import load_evaluation_model
-from job_scout.models import (
+from job_scout.config.evaluation_model_loader import load_evaluation_model
+from job_scout.config.profile_loader import load_user_profile
+from job_scout.domain.models import (
     CapabilityModel,
     EvaluationModel,
     EvaluationProvenance,
@@ -28,7 +29,6 @@ from job_scout.models import (
     JobPosting,
     UserProfile,
 )
-from job_scout.profile_loader import load_user_profile
 
 
 @lru_cache(maxsize=1)

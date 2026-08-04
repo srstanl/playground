@@ -7,7 +7,13 @@ import json
 from pathlib import Path
 import sqlite3
 
-from job_scout.models import ApplicationRecord, ApplicationRecordCreate, JobPosting, JobPostingInput
+from job_scout.domain.models import (
+    ApplicationEvent,
+    ApplicationRecord,
+    ApplicationRecordCreate,
+    JobPosting,
+    JobPostingInput,
+)
 
 
 SCHEMA = """
@@ -40,6 +46,25 @@ CREATE TABLE IF NOT EXISTS application_records (
     notes TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
+    FOREIGN KEY(job_posting_id) REFERENCES job_postings(id)
+);
+
+CREATE TABLE IF NOT EXISTS application_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    application_record_id INTEGER NOT NULL,
+    job_posting_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    event_at TEXT NOT NULL,
+    changed_fields_json TEXT NOT NULL DEFAULT '[]',
+    decision TEXT NOT NULL,
+    status TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    applied_at TEXT,
+    last_event_at TEXT,
+    next_follow_up_at TEXT,
+    resume_variant TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY(application_record_id) REFERENCES application_records(id),
     FOREIGN KEY(job_posting_id) REFERENCES job_postings(id)
 );
 """
@@ -204,8 +229,22 @@ def create_application_record(
             created_at,
         ),
     )
+    record = get_application_record_by_id(connection, cursor.lastrowid)
+    _insert_application_event(
+        connection,
+        record=record,
+        event_type="tracking_initialized",
+        changed_fields=[
+            "decision",
+            "status",
+            "outcome",
+            "next_follow_up_at",
+            "notes",
+        ],
+        event_at=record.created_at,
+    )
     connection.commit()
-    return get_application_record_by_id(connection, cursor.lastrowid)
+    return record
 
 
 def get_application_record(connection: sqlite3.Connection, job_posting_id: int) -> ApplicationRecord:
@@ -302,6 +341,38 @@ def list_application_records(
     return [_row_to_application_record(row) for row in rows]
 
 
+def list_application_events(
+    connection: sqlite3.Connection,
+    *,
+    job_posting_id: int,
+) -> list[ApplicationEvent]:
+    """Return tracking events for one job posting in chronological order."""
+    rows = connection.execute(
+        """
+        SELECT
+            id,
+            application_record_id,
+            job_posting_id,
+            event_type,
+            event_at,
+            changed_fields_json,
+            decision,
+            status,
+            outcome,
+            applied_at,
+            last_event_at,
+            next_follow_up_at,
+            resume_variant,
+            notes
+        FROM application_events
+        WHERE job_posting_id = ?
+        ORDER BY event_at ASC, id ASC
+        """,
+        (job_posting_id,),
+    ).fetchall()
+    return [_row_to_application_event(row) for row in rows]
+
+
 def update_application_record(
     connection: sqlite3.Connection,
     job_posting_id: int,
@@ -317,6 +388,29 @@ def update_application_record(
 ) -> ApplicationRecord:
     """Update fields on an existing tracking record."""
     existing = get_application_record(connection, job_posting_id)
+    resolved_decision = decision if decision is not None else existing.decision
+    resolved_status = status if status is not None else existing.status
+    resolved_outcome = outcome if outcome is not None else existing.outcome
+    resolved_applied_at = applied_at if applied_at is not None else existing.applied_at
+    resolved_last_event_at = last_event_at if last_event_at is not None else existing.last_event_at
+    resolved_next_follow_up_at = (
+        next_follow_up_at if next_follow_up_at is not None else existing.next_follow_up_at
+    )
+    resolved_resume_variant = resume_variant if resume_variant is not None else existing.resume_variant
+    resolved_notes = notes if notes is not None else existing.notes
+    changed_fields = _changed_tracking_fields(
+        existing=existing,
+        decision=resolved_decision,
+        status=resolved_status,
+        outcome=resolved_outcome,
+        applied_at=resolved_applied_at,
+        last_event_at=resolved_last_event_at,
+        next_follow_up_at=resolved_next_follow_up_at,
+        resume_variant=resolved_resume_variant,
+        notes=resolved_notes,
+    )
+    if not changed_fields:
+        return existing
     updated_at = datetime.now(UTC).isoformat()
     connection.execute(
         """
@@ -334,20 +428,28 @@ def update_application_record(
         WHERE job_posting_id = ?
         """,
         (
-            decision if decision is not None else existing.decision,
-            status if status is not None else existing.status,
-            outcome if outcome is not None else existing.outcome,
-            _iso_or_none(applied_at) if applied_at is not None else _iso_or_none(existing.applied_at),
-            _iso_or_none(last_event_at) if last_event_at is not None else _iso_or_none(existing.last_event_at),
-            _iso_or_none(next_follow_up_at) if next_follow_up_at is not None else _iso_or_none(existing.next_follow_up_at),
-            resume_variant if resume_variant is not None else existing.resume_variant,
-            notes if notes is not None else existing.notes,
+            resolved_decision,
+            resolved_status,
+            resolved_outcome,
+            _iso_or_none(resolved_applied_at),
+            _iso_or_none(resolved_last_event_at),
+            _iso_or_none(resolved_next_follow_up_at),
+            resolved_resume_variant,
+            resolved_notes,
             updated_at,
             job_posting_id,
         ),
     )
+    record = get_application_record(connection, job_posting_id)
+    _insert_application_event(
+        connection,
+        record=record,
+        event_type="tracking_updated",
+        changed_fields=changed_fields,
+        event_at=record.updated_at,
+    )
     connection.commit()
-    return get_application_record(connection, job_posting_id)
+    return record
 
 
 def _row_to_job_posting(row: sqlite3.Row) -> JobPosting:
@@ -381,6 +483,28 @@ def _row_to_application_record(row: sqlite3.Row) -> ApplicationRecord:
         notes=row["notes"],
         created_at=datetime.fromisoformat(row["created_at"]),
         updated_at=datetime.fromisoformat(row["updated_at"]),
+    )
+
+
+def _row_to_application_event(row: sqlite3.Row) -> ApplicationEvent:
+    changed_fields = json.loads(row["changed_fields_json"]) if row["changed_fields_json"] else []
+    if not isinstance(changed_fields, list):
+        changed_fields = []
+    return ApplicationEvent(
+        id=row["id"],
+        application_record_id=row["application_record_id"],
+        job_posting_id=row["job_posting_id"],
+        event_type=row["event_type"],
+        event_at=datetime.fromisoformat(row["event_at"]),
+        changed_fields=[str(value) for value in changed_fields],
+        decision=row["decision"],
+        status=row["status"],
+        outcome=row["outcome"],
+        applied_at=_datetime_or_none(row["applied_at"]),
+        last_event_at=_datetime_or_none(row["last_event_at"]),
+        next_follow_up_at=_datetime_or_none(row["next_follow_up_at"]),
+        resume_variant=row["resume_variant"],
+        notes=row["notes"],
     )
 
 
@@ -418,3 +542,79 @@ def _ensure_job_postings_column(connection: sqlite3.Connection, column_name: str
     }
     if column_name not in existing_columns:
         connection.execute(f"ALTER TABLE job_postings ADD COLUMN {column_name} {column_type}")
+
+
+def _insert_application_event(
+    connection: sqlite3.Connection,
+    *,
+    record: ApplicationRecord,
+    event_type: str,
+    changed_fields: list[str],
+    event_at: datetime,
+) -> None:
+    connection.execute(
+        """
+        INSERT INTO application_events (
+            application_record_id,
+            job_posting_id,
+            event_type,
+            event_at,
+            changed_fields_json,
+            decision,
+            status,
+            outcome,
+            applied_at,
+            last_event_at,
+            next_follow_up_at,
+            resume_variant,
+            notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            record.id,
+            record.job_posting_id,
+            event_type,
+            event_at.isoformat(),
+            json.dumps(sorted(set(changed_fields))),
+            record.decision,
+            record.status,
+            record.outcome,
+            _iso_or_none(record.applied_at),
+            _iso_or_none(record.last_event_at),
+            _iso_or_none(record.next_follow_up_at),
+            record.resume_variant,
+            record.notes,
+        ),
+    )
+
+
+def _changed_tracking_fields(
+    *,
+    existing: ApplicationRecord,
+    decision: str,
+    status: str,
+    outcome: str,
+    applied_at: datetime | None,
+    last_event_at: datetime | None,
+    next_follow_up_at: datetime | None,
+    resume_variant: str,
+    notes: str,
+) -> list[str]:
+    changed_fields: list[str] = []
+    if decision != existing.decision:
+        changed_fields.append("decision")
+    if status != existing.status:
+        changed_fields.append("status")
+    if outcome != existing.outcome:
+        changed_fields.append("outcome")
+    if applied_at != existing.applied_at:
+        changed_fields.append("applied_at")
+    if last_event_at != existing.last_event_at:
+        changed_fields.append("last_event_at")
+    if next_follow_up_at != existing.next_follow_up_at:
+        changed_fields.append("next_follow_up_at")
+    if resume_variant != existing.resume_variant:
+        changed_fields.append("resume_variant")
+    if notes != existing.notes:
+        changed_fields.append("notes")
+    return changed_fields

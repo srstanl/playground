@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 import re
 
-from job_scout.models import (
+from job_scout.domain.models import (
     CapabilityModel,
     CompensationBand,
     CompensationRange,

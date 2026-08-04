@@ -36,7 +36,6 @@ The MVP should not attempt to include:
 - email sync
 - reminder delivery
 - contact management as a full system
-- rich event timelines for every micro-action
 - automated reporting dashboards
 
 Those can come later if the basic tracking model proves useful.
@@ -179,18 +178,31 @@ Suggested v1 database shape:
 - one row per tracked job
 - linked to `job_postings.id`
 
-Optional future table:
+Event table:
 
 ### `application_events`
 
-Do not build this in v1 unless the simple record proves insufficient.
+This should now exist in v1 as a lightweight durable event stream, not a full event-sourced rewrite.
 
-If later needed, it can capture:
+Suggested fields:
 
-- status changes
-- notes over time
-- recruiter touchpoints
-- interview milestones
+- `id`
+- `application_record_id`
+- `job_posting_id`
+- `event_type`
+- `event_at`
+- `changed_fields_json`
+- snapshot fields for:
+  - `decision`
+  - `status`
+  - `outcome`
+  - `applied_at`
+  - `last_event_at`
+  - `next_follow_up_at`
+  - `resume_variant`
+  - `notes`
+
+This keeps the mutable `application_records` row for current-state reads while preserving a durable append-only history for later analysis.
 
 ## Analytics Intent
 
@@ -211,7 +223,7 @@ This means status and outcome fields should be normalized from the start.
 2. Add persistence and repository helpers.
 3. Add minimal CLI commands for init/show/update/list.
 4. Add tests for lifecycle transitions and filtering.
-5. Revisit whether event history is truly needed.
+5. Expose event history through a simple read path.
 
 ## Board Mapping
 

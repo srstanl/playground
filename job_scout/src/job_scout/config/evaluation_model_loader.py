@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from job_scout.models import EvaluationModel, RecommendationThresholds, RiskRule
+from job_scout.domain.models import EvaluationModel, RecommendationThresholds, RiskRule
 
 
 def load_evaluation_model(path: Path) -> EvaluationModel:

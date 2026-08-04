@@ -1,3 +1,0 @@
-"""Compatibility shim for domain models."""
-
-from job_scout.domain.models import *  # noqa: F401,F403

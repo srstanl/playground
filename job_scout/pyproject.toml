@@ -18,5 +18,9 @@ dependencies = [
 [project.scripts]
 job-scout = "job_scout.cli:main"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["job_scout*"]

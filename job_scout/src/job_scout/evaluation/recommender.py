@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from job_scout.models import EvaluationModel, ExtractionResult, ScoreDimension, ScoringResult
+from job_scout.domain.models import (
+    EvaluationModel,
+    ExtractionResult,
+    ScoreDimension,
+    ScoringResult,
+)
 
 
 def compute_overall_score(dimensions: list[ScoreDimension]) -> int:

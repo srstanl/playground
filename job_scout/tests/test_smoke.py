@@ -7,8 +7,8 @@ import unittest
 
 from job_scout.adapters.browser import BrowserTabJobCapture
 from job_scout import cli
-from job_scout.evaluation_model_loader import load_evaluation_model
-from job_scout.models import JobPosting, TargetingPreferences, UserProfile
+from job_scout.config.evaluation_model_loader import load_evaluation_model
+from job_scout.domain.models import JobPosting, TargetingPreferences, UserProfile
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1]
@@ -235,7 +235,7 @@ class JobScoutCliTests(unittest.TestCase):
 
     def test_ingest_browser_tab_capture(self) -> None:
         from job_scout.application.ingest import fetch_job, ingest_browser_tab_capture
-        from job_scout.db import connect, initialize_database
+        from job_scout.persistence.sqlite import connect, initialize_database
 
         temp_dir = Path(self.id().replace(".", "_"))
         temp_dir.mkdir(exist_ok=True)
@@ -364,6 +364,70 @@ class JobScoutCliTests(unittest.TestCase):
         self.assertIn("Tracking updated for job 1.", update_output.getvalue())
         self.assertEqual(list_exit, 0)
         self.assertIn("[1] apply | applied | unknown", list_output.getvalue())
+
+    def test_track_history(self) -> None:
+        temp_dir = Path(self.id().replace(".", "_"))
+        temp_dir.mkdir(exist_ok=True)
+        database_path = temp_dir / "job_scout.db"
+        job_file = temp_dir / "job.txt"
+        job_file.write_text("Platform role with delivery systems work.", encoding="utf-8")
+
+        original_database_path = cli._database_path
+        cli._database_path = lambda: database_path
+        try:
+            with redirect_stdout(StringIO()):
+                cli.run(
+                    [
+                        "ingest",
+                        "--file",
+                        str(job_file),
+                        "--source-system",
+                        "linkedin",
+                        "--title",
+                        "Platform Engineer",
+                    ]
+                )
+                cli.run(
+                    [
+                        "track",
+                        "init",
+                        "1",
+                        "--decision",
+                        "saved",
+                        "--status",
+                        "not_started",
+                        "--outcome",
+                        "unknown",
+                    ]
+                )
+                cli.run(
+                    [
+                        "track",
+                        "update",
+                        "1",
+                        "--decision",
+                        "apply",
+                        "--status",
+                        "applied",
+                        "--notes",
+                        "Submitted application",
+                    ]
+                )
+            history_output = StringIO()
+            with redirect_stdout(history_output):
+                history_exit = cli.run(["track", "history", "1"])
+        finally:
+            cli._database_path = original_database_path
+            if database_path.exists():
+                database_path.unlink()
+            if job_file.exists():
+                job_file.unlink()
+            temp_dir.rmdir()
+
+        self.assertEqual(history_exit, 0)
+        self.assertIn("tracking_initialized", history_output.getvalue())
+        self.assertIn("tracking_updated", history_output.getvalue())
+        self.assertIn("changed=decision,notes,status", history_output.getvalue())
 
     def test_track_init_rejects_duplicate_record(self) -> None:
         temp_dir = Path(self.id().replace(".", "_"))
@@ -543,7 +607,7 @@ class EngineeringPersonaEvaluationTests(unittest.TestCase):
     def test_profile_loader_normalizes_legacy_persona_aliases(self) -> None:
         import json
 
-        from job_scout.profile_loader import load_user_profile
+        from job_scout.config.profile_loader import load_user_profile
 
         temp_dir = Path(self.id().replace(".", "_"))
         temp_dir.mkdir(exist_ok=True)
@@ -575,7 +639,7 @@ class EngineeringPersonaEvaluationTests(unittest.TestCase):
 
 class EvaluationModelTests(unittest.TestCase):
     def test_job_evaluation_defaults(self) -> None:
-        from job_scout.models import EvaluationSummary, JobEvaluation
+        from job_scout.domain.models import EvaluationSummary, JobEvaluation
 
         evaluation = JobEvaluation(
             job_posting_id=7,
@@ -597,7 +661,7 @@ class EvaluationModelTests(unittest.TestCase):
 
 class UserProfileLoaderTests(unittest.TestCase):
     def test_missing_user_profile_has_setup_error(self) -> None:
-        from job_scout.profile_loader import load_user_profile
+        from job_scout.config.profile_loader import load_user_profile
 
         missing_path = Path("missing_user_profile.json")
 
@@ -608,7 +672,7 @@ class UserProfileLoaderTests(unittest.TestCase):
         self.assertIn("Resume ingestion is not implemented yet", str(context.exception))
 
     def test_load_user_profile_example(self) -> None:
-        from job_scout.profile_loader import load_user_profile
+        from job_scout.config.profile_loader import load_user_profile
 
         profile = load_user_profile(FIXTURE_ROOT / "profiles" / "user_profile.example.json")
 
@@ -625,7 +689,7 @@ class UserProfileLoaderTests(unittest.TestCase):
 
 class CapabilityModelLoaderTests(unittest.TestCase):
     def test_load_capability_model(self) -> None:
-        from job_scout.capability_model_loader import load_capability_model
+        from job_scout.config.capability_model_loader import load_capability_model
 
         model = load_capability_model(CONFIG_ROOT / "capability_model.json")
 
