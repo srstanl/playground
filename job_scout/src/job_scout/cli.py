@@ -12,7 +12,14 @@ from textwrap import shorten
 from typing import cast
 
 from job_scout.application.evaluate import evaluate_job
-from job_scout.application.ingest import IngestBatchResult, fetch_job, fetch_jobs, ingest_batch, ingest_job_description
+from job_scout.application.ingest import (
+    IngestBatchResult,
+    fetch_job,
+    fetch_jobs,
+    ingest_batch,
+    ingest_job_description,
+    ingest_job_text,
+)
 from job_scout.application.track import (
     TRACK_DECISIONS,
     TRACK_OUTCOMES,
@@ -45,6 +52,15 @@ class IngestArgs(CommandArgs):
 
 class IngestBatchArgs(CommandArgs):
     jsonl: Path
+
+
+class IngestTextArgs(CommandArgs):
+    external_id: str | None
+    source_url: str | None
+    source_system: str
+    company: str | None
+    title: str | None
+    location: str | None
 
 
 class ShowArgs(CommandArgs):
@@ -125,6 +141,17 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_batch_parser = subparsers.add_parser("ingest-batch", help="Ingest multiple job descriptions from a jsonl file.")
     ingest_batch_parser.add_argument("--jsonl", required=True, type=Path)
 
+    ingest_text_parser = subparsers.add_parser(
+        "ingest-text",
+        help="Ingest a job description from pasted stdin text.",
+    )
+    ingest_text_parser.add_argument("--source-url")
+    ingest_text_parser.add_argument("--source-system", required=True)
+    ingest_text_parser.add_argument("--company")
+    ingest_text_parser.add_argument("--title")
+    ingest_text_parser.add_argument("--location")
+    ingest_text_parser.add_argument("--external-id")
+
     subparsers.add_parser("list", help="List ingested jobs.")
 
     show_parser = subparsers.add_parser("show", help="Show one ingested job.")
@@ -195,6 +222,22 @@ def run(argv: list[str] | None = None) -> int:
         batch_args = cast(IngestBatchArgs, args)
         result = ingest_batch(jsonl_path=batch_args.jsonl, connection_factory=_connection)
         _print_batch_ingest_result(result)
+        return 0
+
+    if args.command == "ingest-text":
+        ingest_text_args = cast(IngestTextArgs, args)
+        raw_description = sys.stdin.read()
+        job = ingest_job_text(
+            raw_description=raw_description,
+            source_system=ingest_text_args.source_system,
+            source_url=ingest_text_args.source_url,
+            company=ingest_text_args.company,
+            title=ingest_text_args.title,
+            location=ingest_text_args.location,
+            external_id=ingest_text_args.external_id,
+            connection_factory=_connection,
+        )
+        print(f"Ingested job {job.id}: {job.title or 'untitled'}")
         return 0
 
     if args.command == "list":

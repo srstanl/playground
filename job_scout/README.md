@@ -122,6 +122,9 @@ Current workflow:
 
 ```bash
 python -m job_scout.cli ingest --file ./data/inputs/jd/example_job.txt --source-system linkedin
+python -m job_scout.cli ingest-text --source-system linkedin --title "Platform Engineer" <<'EOF'
+Platform engineer role building delivery systems and internal tooling.
+EOF
 python -m job_scout.cli ingest-batch --jsonl ./data/inputs/jd/jobs.jsonl
 python -m job_scout.cli evaluate 1
 python -m job_scout.cli track init 1 --decision apply --status application_ready
@@ -142,6 +145,14 @@ Tracking outcomes support both candidate-driven and process-driven endings, incl
 - `hiring_paused`
 
 Batch ingestion currently supports newline-delimited JSON (`jsonl`) with one job posting per line. See `docs/batch_ingestion.md`.
+
+For the lowest-friction manual path, you can paste a JD directly into stdin:
+
+```bash
+python -m job_scout.cli ingest-text --source-system linkedin --source-url "https://example.com/job/123" <<'EOF'
+Paste the full job description here.
+EOF
+```
 
 Browser-driven capture is prepared through an adapter boundary documented in `docs/browser_ingestion_adapter.md`. The evaluator stays transport-agnostic: browser capture feeds the same persisted ingestion flow used by the CLI.
 

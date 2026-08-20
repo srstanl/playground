@@ -4,6 +4,7 @@ from io import StringIO
 import os
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from job_scout.adapters.browser import BrowserTabJobCapture
 from job_scout import cli
@@ -138,6 +139,68 @@ class JobScoutCliTests(unittest.TestCase):
         self.assertIn("Senior DevOps Engineer", list_output.getvalue())
         self.assertIn("Platform Engineer", list_output.getvalue())
         self.assertIn('external_ids: {"greenhouse": "gh-001", "linkedin": "li-001"}', show_output.getvalue())
+
+    def test_ingest_text_from_stdin(self) -> None:
+        temp_dir = Path(self.id().replace(".", "_"))
+        temp_dir.mkdir(exist_ok=True)
+        database_path = temp_dir / "job_scout.db"
+
+        original_database_path = cli._database_path
+        cli._database_path = lambda: database_path
+        try:
+            ingest_output = StringIO()
+            with patch("sys.stdin", StringIO("Senior platform role focused on developer tooling.\n\nOwn CI/CD systems.")):
+                with redirect_stdout(ingest_output):
+                    ingest_exit = cli.run(
+                        [
+                            "ingest-text",
+                            "--source-system",
+                            "linkedin",
+                            "--company",
+                            "Example Co",
+                            "--title",
+                            "Senior Platform Engineer",
+                            "--location",
+                            "Remote",
+                            "--source-url",
+                            "https://example.com/jobs/platform",
+                        ]
+                    )
+
+            show_output = StringIO()
+            with redirect_stdout(show_output):
+                show_exit = cli.run(["show", "1"])
+        finally:
+            cli._database_path = original_database_path
+            if database_path.exists():
+                database_path.unlink()
+            temp_dir.rmdir()
+
+        self.assertEqual(ingest_exit, 0)
+        self.assertIn("Ingested job 1: Senior Platform Engineer", ingest_output.getvalue())
+        self.assertEqual(show_exit, 0)
+        self.assertIn("source_type: stdin_text", show_output.getvalue())
+        self.assertIn("source_reference: stdin", show_output.getvalue())
+        self.assertIn("Senior platform role focused on developer tooling.", show_output.getvalue())
+
+    def test_ingest_text_rejects_empty_stdin(self) -> None:
+        temp_dir = Path(self.id().replace(".", "_"))
+        temp_dir.mkdir(exist_ok=True)
+        database_path = temp_dir / "job_scout.db"
+
+        original_database_path = cli._database_path
+        cli._database_path = lambda: database_path
+        try:
+            with patch("sys.stdin", StringIO("   \n\n")):
+                with self.assertRaises(SystemExit) as error:
+                    cli.run(["ingest-text", "--source-system", "linkedin"])
+        finally:
+            cli._database_path = original_database_path
+            if database_path.exists():
+                database_path.unlink()
+            temp_dir.rmdir()
+
+        self.assertEqual(str(error.exception), "job description text is empty")
 
     def test_evaluate_job(self) -> None:
         from job_scout import evaluator

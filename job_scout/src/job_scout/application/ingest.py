@@ -76,6 +76,39 @@ def ingest_job_description(
     )
 
 
+def ingest_job_text(
+    *,
+    raw_description: str,
+    source_system: str,
+    source_url: str | None,
+    company: str | None,
+    title: str | None,
+    location: str | None,
+    external_id: str | None,
+    connection_factory: ConnectionFactory,
+) -> JobPosting:
+    """Ingest one job description provided directly as pasted text."""
+    normalized_description = raw_description.strip()
+    if not normalized_description:
+        raise SystemExit("job description text is empty")
+
+    payload = JobPostingInput(
+        source_system=source_system,
+        raw_description=normalized_description,
+        source_url=source_url,
+        company=company,
+        title=title,
+        location=location,
+        external_ids=_external_ids_from_inputs(source_system, external_id),
+    )
+    return _ingest_payload(
+        payload=payload,
+        source_type="stdin_text",
+        source_reference="stdin",
+        connection_factory=connection_factory,
+    )
+
+
 def ingest_batch(*, jsonl_path: Path, connection_factory: ConnectionFactory) -> IngestBatchResult:
     """Ingest multiple job descriptions from a jsonl file."""
     if not jsonl_path.exists() or not jsonl_path.is_file():
